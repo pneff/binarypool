@@ -1,9 +1,13 @@
 Dependencies
 ============
-- ImageMagick: specifically it's convert command
 
-- symlinks
-    - Debian: # apt-get install symlinks
-    - Centos: # yum install symlinks
-    - Others: Download and compile:
-              http://mirror.switch.ch/ftp/mirror/FreeBSD/ports/distfiles/symlinks-1.2.tar.gz
+The following Unix tools are required:
+
+    - convert from ImageMagick
+    - symlinks
+        - Debian: # apt-get install symlinks
+        - Centos: # yum install symlinks
+        - Others: Download and compile:
+          http://mirror.switch.ch/ftp/mirror/FreeBSD/ports/distfiles/symlinks-1.2.tar.gz
+    - file
+    - xmllint

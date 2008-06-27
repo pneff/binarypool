@@ -10,6 +10,10 @@ The following steps are required to set up binarypool:
 Copy conf/binarypool.php-dist to conf/binarypool.php. That file contains
 information about the buckets and some file paths.
 
+Then copy conf/config.d/default.yml-dist to conf/config.d/default.yml-dist.
+The only interesting configuration to change in that file is the logging
+path and verbosity.
+
 
 2. Set up web
 =============
