@@ -8,18 +8,3 @@ retrieve information about binaries and easily use the renditions on frontend
 sites.
 
 Binaries can be storied either in the local file system or on Amazon S3.
-
-
-Dependencies
-============
-
-The following Unix tools are required:
-
-    - convert from ImageMagick
-    - symlinks
-        - Debian: # apt-get install symlinks
-        - Centos: # yum install symlinks
-        - Others: Download and compile:
-          http://mirror.switch.ch/ftp/mirror/FreeBSD/ports/distfiles/symlinks-1.2.tar.gz
-    - file
-    - xmllint
