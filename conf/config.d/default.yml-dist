@@ -1,0 +1,26 @@
+# Copy this file to default.yml or any other name ending with YML.
+
+default: &default
+    configCache: false
+    tmpdir: "{API_PROJECT_DIR}tmp/"
+    
+    hosts:
+        "*":
+    
+    exceptionhandler:
+        "*": default
+    
+    lang:
+        i18ntransform: false
+        languages: [en]
+        default: en
+    
+    log:
+        -
+            class: Writer_Stream
+            priority: DEBUG
+            cfg: '/var/log/binarypool.log'
+
+testing:
+    <<: *default
+    log: []
