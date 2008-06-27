@@ -1,6 +1,11 @@
 ext/log
 inc/api
-conf/
 tmp/
 .svn
+conf/binarypool.php
+conf/binarypool-test.php
+conf/config.xml
+conf/schema/
+conf/config.d/00-default.yml
+
 
