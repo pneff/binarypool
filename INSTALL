@@ -1,11 +1,22 @@
 The following steps are required to set up binarypool:
 
-    1. Configuration
-    2. Set up web
-    3. Set up cronjobs
+    1. Get code
+    2. Configuration
+    3. Set up web
+    4. Run tests
+    5. Set up cronjobs
 
 
-1. Configuration
+1. Get code
+===========
+Binarypool builds on top of Okapi. You need to check out Okapi and the
+logging extension:
+
+  $ cd inc && svn co https://svn.liip.ch/repos/public/okapi/core/trunk/inc/api
+  $ cd ../ext && svn co https://svn.liip.ch/repos/public/okapi/ext/log/trunk/inc log
+
+
+2. Configuration
 ================
 Copy conf/binarypool.php-dist to conf/binarypool.php. That file contains
 information about the buckets and some file paths.
@@ -15,14 +26,22 @@ The only interesting configuration to change in that file is the logging
 path and verbosity.
 
 
-2. Set up web
+3. Set up web
 =============
 Set up the web in Apache or your web server of choice. In case you're not
 running on Apache, you must migrate the rewrite rules from .htaccess
 manually.
 
 
-3. Set up cronjob
+4. Run tests
+============
+To verify that your configuration is correct and you have all the required
+settings, you can run the test suite:
+
+  $ tests/run_all.sh
+
+
+5. Set up cronjob
 =================
 The script scripts/expire.php deletes expired items in the binarypool.
 You should set it to run daily using cron.
