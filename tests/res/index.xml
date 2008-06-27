@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<localInfo type="full" version="2.0">
+    <!-- Test for filename handling. Thus the filename "index.xml" is relevant. -->
+    <contractId>1234567</contractId>
+    <contractPositionId>12</contractPositionId>
+    <manuscriptId>12345678</manuscriptId>
+    <revision>1</revision>
+</localInfo>

@@ -1,3 +1,6 @@
 ext/log
 inc/api
 conf/
+tmp/
+.svn
+

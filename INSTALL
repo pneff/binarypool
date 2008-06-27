@@ -1,0 +1,24 @@
+The following steps are required to set up binarypool:
+
+    1. Configuration
+    2. Set up web
+    3. Set up cronjobs
+
+
+1. Configuration
+================
+Copy conf/binarypool.php-dist to conf/binarypool.php. That file contains
+information about the buckets and some file paths.
+
+
+2. Set up web
+=============
+Set up the web in Apache or your web server of choice. In case you're not
+running on Apache, you must migrate the rewrite rules from .htaccess
+manually.
+
+
+3. Set up cronjob
+=================
+The script scripts/expire.php deletes expired items in the binarypool.
+You should set it to run daily using cron.
