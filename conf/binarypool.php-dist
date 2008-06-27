@@ -1,0 +1,86 @@
+<?php
+/**
+ * Example configuration file for binarypool.
+ *
+ * Copy this file to binarypool.php and adjust it to your needs.
+ */
+
+/**
+ * Available buckets.
+ *
+ * Each bucket defines the following configuration:
+ *
+ * renditions:
+ * Associative array with all the renditions which are automatically
+ * generated for each picture posted to this bucket.
+ *
+ * ttl:
+ * Time to live in days. Binaries automatically expire after residing
+ * in the bucket for that many days without being touched.
+ *
+ * allowDeletions:
+ * Boolean value if deletions are allowed in this bucket. This should not
+ * be activated on production system buckets. The default expiry
+ * process takes care of the case when the same binary is used by
+ * different clients - active deletions can't correctly handle that
+ * issue.
+ */
+
+$BUCKETS = array(
+    // Defines a test bucket with two renditions and a XSD schema for
+    // validating XML input.
+    'test' => array(
+        'renditions' => array(
+            'IMAGE' => array(
+                'detailpage' => array('width' => 108, 'height' => 81),
+                'resultlist' => array('width' =>  70, 'height' => 50),
+            ),
+        ),
+        'validations' => array(
+            'XML' => dirname(__FILE__) . '/schema/localinfo-2.0.xsd',
+        ),
+        // Remove files after 7 days (you need scripts/expire.php for that)
+        'ttl' => 7,
+        // Allow files to be deleted using the API (false by default)
+        'allowDeletions' => true,
+    ),
+    
+    // Defines a test bucket with uses Amazon S3 as the binary storage.
+    // Asset files are still stored in $ROOT defined below.
+    'test_s3' => array(
+        'renditions' => array(
+            'IMAGE' => array(
+                'detailpage' => array('width' => 108, 'height' => 81),
+                'resultlist' => array('width' =>  70, 'height' => 50),
+            ),
+        ),
+        'ttl' => 30,
+        'storage' => array(
+            'backend'    => 's3',
+            'bucket'     => 'my_bucket_name',
+            'base_url'   => 'http://my_bucket_name.s3.amazonaws.com/',
+            'access_id'  => 'my_s3_access_key',
+            'secret_key' => 'my_s3_secret_key',
+        ),
+    ),
+);
+
+/**
+ * Absolute path on the file system where the binary pool
+ * manages its data.
+ * 
+ * At least the folders for each bucket must be writable
+ * for the web user.
+ */
+$ROOT = '/binarypool/';
+
+/**
+ * Paths to utilities on the file system.
+ */
+$PATHS = array(
+    'convert'  => 'convert',
+    'symlinks' => 'symlinks',
+    'xmllint'  => 'xmllint',
+    'file'     => 'file',
+);
+?>
