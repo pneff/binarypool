@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__) . '/config.php');
+
 /*
  * HTTP Client wrapper around curl with methods
  * corresponding to http methods.
@@ -33,7 +35,7 @@ class binarypool_httpclient {
         
         // See http://curl.haxx.se/libcurl/c/curl_easy_setopt.html
         curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_USERAGENT, 'local.ch binary fetcher/1.0 (+http://www.local.ch/s/contact)'); 
+        curl_setopt($curl, CURLOPT_USERAGENT, binarypool_config::getUseragent());
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);  // return data as string 
         curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 0);  // don't follow redirects
         

@@ -11,6 +11,7 @@ class binarypool_config {
     private static $logpath = '/tmp/binarypool-log';
     private static $paths = array();
     private static $badUrlExpiry = 3600; 
+    private static $useragent = 'Binary Pool/1.0';
     
     /**
      * Associative array of all configured buckets.
@@ -55,6 +56,15 @@ class binarypool_config {
     }
     
     /**
+     * Returns a Useragent string for the binary "fetcher"
+     * used to pull new images via HTTP 
+     */
+    public static function getUseragent() {
+        if (! self::$loaded) self::load();
+        return self::$useragent;
+    }
+    
+    /**
      * Load settings from the config file.
      */
     private static function load() {
@@ -85,6 +95,8 @@ class binarypool_config {
         
         self::$logpath = $LOGPATH;
         self::$paths = $PATHS;
+        self::$badUrlExpiry = $BADURLEXPIRY;
+        self::$useragent = $USERAGENT;
     }
 }
 ?>

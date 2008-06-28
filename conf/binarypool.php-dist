@@ -83,4 +83,10 @@ $PATHS = array(
     'xmllint'  => 'xmllint',
     'file'     => 'file',
 );
+
+/**
+ * Useragent string used when fetching binaries from URLs
+ * You should add your company name and URL here.
+ */
+$USERAGENT = 'Binary Pool/1.0';
 ?>
