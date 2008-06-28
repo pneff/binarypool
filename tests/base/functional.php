@@ -41,4 +41,14 @@ class test_base_functional extends api_testing_case_functional {
             'File' => '@'.realpath(dirname(__FILE__).'/../res/vw_golf.jpg'),
         ));
     }
+
+    /**
+     * Creates a new uploaded file from a URL.
+     */
+    public function uploadUrl() {
+        $this->post('/test', array(
+            'Type' => 'IMAGE',
+            'URL' => 'http://staticlocal.ch/images/logo.gif',
+        ));
+    }
 }

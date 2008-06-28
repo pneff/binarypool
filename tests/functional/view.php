@@ -49,6 +49,21 @@ class test_func_view extends test_base_functional {
         $this->assertAttribute('/view/asset/path@deprecated', 'true');
     }
     
+    function testGetAssetByDownloadedView() {
+        $this->uploadUrl();
+        $this->get('/test/downloaded/2c');
+        $response = api_response::getInstance();
+        $this->assertEqual($response->getCode(), 200);
+        $this->assertText('/view/asset/asset', 'test/d5/d5637d2355ab3e56b875bc32f2ffff45dcca781b/index.xml');
+    }
+    
+    function testGetAssetByDownloadedViewWithHash() {
+        $this->uploadUrl();
+        $this->get('/test/downloaded/2c/2c76cf00527d36da0e2bd72071dbd9d480d97993');
+        $response = api_response::getInstance();
+        $this->assertEqual($response->getCode(), 200);
+    }
+    
     /**
      * Tests if we get a correct error for a view which does not exist.
      */

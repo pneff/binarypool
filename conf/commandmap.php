@@ -44,6 +44,21 @@ $cmd = $m->add($default->dup()
     ->config(array('command' => 'view', 'viewname' => 'expiry')));
 $m->add($cmd->dup()->when(array('verb' => 'HEAD')));
 
+// Assets downloaded by hash of source URL
+$cmd = $m->add($default->dup()
+    ->when(array('verb' => 'GET'))
+    ->route('/:bucket/downloaded/:prefix')
+    ->config(array('command' => 'view', 'viewname' => 'downloaded')));
+$m->add($cmd->dup()->when(array('verb' => 'HEAD')));
+
+// Assets downloaded by hash of source URL - allow HEAD requests
+// to test for existance without needing to parse XML
+$cmd = $m->add($default->dup()
+    ->when(array('verb' => 'GET'))
+    ->route('/:bucket/downloaded/:prefix/:hash')
+    ->config(array('command' => 'view', 'viewname' => 'downloaded')));
+$m->add($cmd->dup()->when(array('verb' => 'HEAD')));
+
 // https://wiki.local.ch/display/I3/Get+binary+or+asset
 $cmd = $m->add($default->dup()
     ->when(array('verb' => 'GET'))
