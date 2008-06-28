@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . "/../base/functional.php");
 
 /**
- * Tests the GET method of the binarypool.
+ * Tests the GET method of the Binary Pool.
  */
 class test_func_get extends test_base_functional {
     /**

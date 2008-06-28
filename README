@@ -1,5 +1,5 @@
-Binarypool is a REST web service that handles generation of thumbnails
-(renditions) for images. Clients can upload images, binarypool generates all
+Binary Pool is a REST web service that handles generation of thumbnails
+(renditions) for images. Clients can upload images, Binary Pool generates all
 renditions based on configuration on the server and then stores the original
 file along with the renditions.
 

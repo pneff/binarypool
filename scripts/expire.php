@@ -3,7 +3,7 @@
 /**
  * Deletes expired assets. This script is meant to run
  * daily. The user as whom this script is run must have
- * full write permissions on the binarypool file system so
+ * full write permissions on the Binary Pool file system so
  * it can delete files.
  */
 

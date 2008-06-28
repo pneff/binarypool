@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . "/../base/functional.php");
 
 /**
- * Tests the HEAD method of the binarypool.
+ * Tests the HEAD method of the Binary Pool.
  */
 class test_func_head extends test_base_functional {
     /**

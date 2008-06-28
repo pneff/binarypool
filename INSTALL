@@ -1,4 +1,4 @@
-The following steps are required to set up binarypool:
+The following steps are required to set up Binary Pool:
 
     0. Install dependencies
     1. Get code
@@ -22,7 +22,7 @@ The following Unix tools are required:
 
 1. Get code
 ===========
-Binarypool builds on top of Okapi. You need to check out Okapi and the
+Binary Pool builds on top of Okapi. You need to check out Okapi and the
 logging extension:
 
   $ cd inc && svn co https://svn.liip.ch/repos/public/okapi/core/trunk/inc/api
@@ -56,5 +56,5 @@ settings, you can run the test suite:
 
 5. Set up cronjob
 =================
-The script scripts/expire.php deletes expired items in the binarypool.
+The script scripts/expire.php deletes expired items in the Binary Pool.
 You should set it to run daily using cron.

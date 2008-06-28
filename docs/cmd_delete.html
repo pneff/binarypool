@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Commands - Delete binary</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Delete binary</h1>
+    
+    <table>
+        <tr>
+            <th>Path</th>
+            <td>/{path_to_asset_file}</td>
+        </tr>
+        <tr>
+            <th>HTTP Method</th>
+            <td>DELETE</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>Removes the binary completely.</td>
+        </tr>
+    </table>
+    
+    <h2>Parameters</h2>
+    <p>The path is the asset file name as returned by the
+    <a href="cmd_create.html">create new binary command</a>.</p>
+
+    <h2>Response</h2>
+    <p>HTTP Code 204 is returned if the file was deleted. The body does not contain any content.</p>
+    
+    <h2>Warning</h2>
+    <p>This method is activated on a per-bucket basis. Deletions are only
+    possible if explicitly activated for a bucket. You should not use that
+    feature in production. Instead let <a href="expiration.html">the
+    expiration magic</a> do it's work.</p>
+</body>
+</html>

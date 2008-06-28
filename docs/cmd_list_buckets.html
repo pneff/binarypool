@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Commands - List buckets</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>List buckets</h1>
+    
+    <table>
+        <tr>
+            <th>Path</th>
+            <td>/</td>
+        </tr>
+        <tr>
+            <th>HTTP Method</th>
+            <td>GET</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>Returns a list of all defined buckets.</td>
+        </tr>
+    </table>
+    
+    <h2>Response</h2>
+    <p>A HTTP 200 response is returned with XML content like this:</p>
+    
+<pre><code>&lt;buckets&gt;
+    &lt;!--List of defined buckets--&gt;
+    &lt;bucket id=&quot;test&quot;/&gt;
+&lt;/buckets&gt;</code></pre>
+    
+    <p>For each defined bucket one bucket tag appears in the result.</p>
+    
+    <p>See <a href="buckets.html">Binary Pool buckets</a> for information
+    about the concept of buckets.</p>
+</body>
+</html>

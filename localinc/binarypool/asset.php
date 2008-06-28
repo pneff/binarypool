@@ -108,7 +108,7 @@ class binarypool_asset {
      * Adds a new callback. Callbacks are asked for permission
      * when it comes to deleting this asset.
      *
-     * @param $callback: URL which returns a response in the binarypool
+     * @param $callback: URL which returns a response in the Binary Pool
      *                   permission response format.
      */
     public function addCallback($callback) {
@@ -127,7 +127,7 @@ class binarypool_asset {
     /**
      * Set the base path. Will be prepended to all paths
      * included in the asset file and should thus be
-     * relative to the binarypool root.
+     * relative to the Binary Pool root.
      *
      * @param $path: Base path where the files included in this
      *               asset file are or will be located.

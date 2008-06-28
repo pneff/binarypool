@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . "/../base/functional.php");
 
 /**
- * Tests the DELETE method of the binarypool.
+ * Tests the DELETE method of the Binary Pool.
  */
 class test_func_delete extends test_base_functional {
     function testDeleteAsset() {

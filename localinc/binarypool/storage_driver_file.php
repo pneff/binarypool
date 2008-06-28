@@ -8,7 +8,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     public function __construct($root = null) {
         if (is_null($root)) {
             if (binarypool_config::getRoot() == '') {
-                throw new binarypool_exception(107, 500, "Binarypool path is not configured.");
+                throw new binarypool_exception(107, 500, "Binary Pool path is not configured.");
             }
             $root = binarypool_config::getRoot();
         }

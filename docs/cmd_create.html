@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Commands - Create new binary</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Create new binary</h1>
+    
+    <table>
+        <tr>
+            <th>Path</th>
+            <td>/{bucket}</td>
+        </tr>
+        <tr>
+            <th>HTTP Method</th>
+            <td>POST</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>Creates a new binary including the renditions defined for the given bucket.</td>
+        </tr>
+    </table>
+    
+    <h2>Bucket</h2>
+    <p>The path to POST to is the <a href="buckets.html">bucket name</a>.</p>
+    
+    <h2>Parameters</h2>
+    <p>Parameters are posted as multi-part POST request with the following keys:</p>
+    
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>Type</td>
+            <td>Enum</td>
+            <td>Type of the upload. This value influences the rendition
+            generation. See the list below (Types) for valid types.</td>
+        </tr>
+        <tr>
+            <td>File</td>
+            <td>File</td>
+            <td>Content of the file.</td>
+        </tr>
+        <tr>
+            <td>File_RENDITION</td>
+            <td>File</td>
+            <td>File to set to the given rendition.</td>
+        </tr>
+        <tr>
+            <td>URL</td>
+            <td>URL</td>
+            <td>URL of a file to download from the internet. Can be used instead of File.</td>
+        </tr>
+        <tr>
+            <td>Callback</td>
+            <td>URL</td>
+            <td>URL which returns "EXPIRED" when the binary can be deleted.
+            See <a href="expiration.html">Expiration</a> for details on the
+            expiration workflow.</td>
+        </tr>
+    </table>
+    
+    <h2>Types</h2>
+    <p>Currently valid types are:</p>
+    <dl>
+        <dt>IMAGE</dt>
+        <dt>MOVIE</dt>
+        <dt>XML</dt>
+        <dd>XML document has to be well-formed to be accepted when this type is specified.</dd>
+    </dl>
+    
+    <h2>Rendition overwriting</h2>
+    <p>By uploading a file "File_RENDITION" where "RENDITION" is any valid
+    rendition for the given bucket, the client can overwrite the calculation
+    of a given rendition.</p>
+    
+    <h2>Response</h2>
+    <p>HTTP Code 201 is returned on success, a normal
+    <a href="errors.html">error response</a> otherwise. The response
+    <tt>X-Asset</tt> header contains the path to the created asset file.
+    Additionally the response body contains the following XML document:</p>
+
+<pre><code>&lt;saved&gt;
+    &lt;asset&gt;(asset file)&lt;/asset&gt;
+&lt;/saved&gt;</code></pre>
+
+    <p>Where "(asset file)" also points to the created asset file.</p>
+    
+    <h3>Warning</h3>
+    <p>Do not implement the path naming logic in your client as the Binary
+    Pool is free to change this at any time. If you absolutely must access
+    content by it's SHA1 hash, use the <a href="cmd_get_sha1.html">get asset
+    by SHA1 hash command</a>.</p>
+    
+</body>
+</html>

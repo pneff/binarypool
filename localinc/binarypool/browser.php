@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/config.php');
 require_once(dirname(__FILE__) . '/asset.php');
 
 /**
- * Read-only access to the binarypool file system.
+ * Read-only access to the Binary Pool file system.
  */
 class binarypool_browser {
     /**

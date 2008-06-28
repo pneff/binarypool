@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Binary Pool</h1>
+    
+    <h2>General information</h2>
+    <dl>
+        <dt><a href="buckets.html">Binary Pool buckets</a></dt>
+        <dd>Information about what buckets are.</dd>
+        
+        <dt><a href="expiration.html">Expiration</a></dt>
+        <dd>How expiration of binaries is implemented.</dd>
+        
+        <dt><a href="errors.html">Error responses</a></dt>
+        <dd>Error output and error codes.</dd>
+    </dl>
+    
+    <h2>Commands</h2>
+    <p>The following commands are offered by this service:</p>
+    
+    <dl>
+        <dt><a href="cmd_create.html">Create new binary</a></dt>
+        <dd>Creates a new binary including the renditions defined for the given bucket.</dd>
+        
+        <dt><a href="cmd_delete.html">Delete binary</a></dt>
+        <dd>Removes the binary completely.</dd>
+        
+        <dt><a href="cmd_get_sha1.html">Get asset by SHA1 hash</a></dt>
+        <dd>Returns asset file by the SHA1 hash of the original picture.</dd>
+        
+        <dt><a href="cmd_get_asset.html">Get binary or asset</a></dt>
+        <dd>Returns the content of the given asset file or binary. This is a 1:1 map from the file system.</dd>
+        
+        <dt><a href="cmd_list_creationdate.html">List assets by creation date</a></dt>
+        <dd>Lists all assets for the given creation date.</dd>
+        
+        <dt><a href="cmd_list_buckets.html">List buckets</a></dt>
+        <dd>Returns a list of all defined buckets.</dd>
+        
+        <dt><a href="cmd_touch.html">Update modification date</a></dt>
+        <dd>Updates the modification date and thus also the expiry date of a binary.</dd>
+    </dl>
+</body>
+</html>

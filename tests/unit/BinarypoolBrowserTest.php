@@ -19,14 +19,14 @@ class BinarypoolBrowserTest extends BinarypoolTestCase {
      * are no expired assets.
      */
     function testGetExpiredEmpty() {
-        // Empty binarypool
+        // Empty Binary Pool
         $this->assertEqual(array(), binarypool_browser::getExpired('test'));
         
-        // Binarypool with one asset which has not been put in a view
+        // Binary Pool with one asset which has not been put in a view
         $asset = $this->storage->save('IMAGE', array('_' => array('file' => $this->testfile)));
         $this->assertEqual(array(), binarypool_browser::getExpired('test'));
 
-        // Binarypool with one asset which has not expired
+        // Binary Pool with one asset which has not expired
         binarypool_views::created('test', $asset);
         $this->assertEqual(array(), binarypool_browser::getExpired('test'));
     }

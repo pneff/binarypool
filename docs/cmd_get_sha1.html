@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Commands - Get asset by SHA1 hash</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Get asset by SHA1 hash</h1>
+    
+    <table>
+        <tr>
+            <th>Path</th>
+            <td>/{bucket}/sha1/{hash}</td>
+        </tr>
+        <tr>
+            <th>HTTP Method</th>
+            <td>GET, HEAD</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>Returns asset file by the SHA1 hash of the original picture.</td>
+        </tr>
+    </table>
+    
+    <h2>Purpose</h2>
+    <p>This command is mostly used for content creators to find out if a
+    binary already exists. For that a client can compute the SHA1 hash of the
+    picture and do a HEAD request to this view.</p>
+    
+    <h2>Response</h2>
+    <p>HTTP Code 302 is returned if the file exists. A 404 error is returned
+    otherwise.</p>
+    
+    <p>The header X-Asset contains the asset file name.</p>
+    
+    <p><em>Implementation note</em>: The Location header could not be used
+    because it would have to be absolute. But asset file names are relative to
+    the binary pool root.</p>
+</body>
+</html>

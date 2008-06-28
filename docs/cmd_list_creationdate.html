@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Commands - List assets by creation date</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>List assets by creation date</h1>
+    
+    <table>
+        <tr>
+            <th>Path</th>
+            <td>/{bucket}/created/{year}/{month}/{day}</td>
+        </tr>
+        <tr>
+            <th>HTTP Method</th>
+            <td>GET</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>Lists all assets for the given creation date.</td>
+        </tr>
+    </table>
+    
+    <h2>Parameters:</h2>
+    <p>The parameters are the following:</p>
+    
+    <dl>
+        <dt>bucket</dt>
+        <dd>A valid <a href="buckets.html">bucket name</a>.</dd>
+        <dt>year</dt>
+        <dd>Four-digit year of the creation date.</dd>
+        <dt>month</dt>
+        <dd>Two-digit month of the creation date.</dd>
+        <dt>day</dt>
+        <dd>Two-digit day of the creation date.</dd>
+    </dl>
+    
+    <p>An example URI can be: /test/created/2007/11/19.</p>
+    
+    <h2>Response</h2>
+    <p>HTTP Code 200 is returned if the view exists. The response body
+    contains a list of all assets in the following format:</p>
+
+<pre><code>&lt;view&gt;
+    &lt;asset&gt;
+        &lt;id&gt;096dfa489bc3f21df56eded2143843f135ae967e&lt;/id&gt;
+        &lt;path&gt;test/096dfa489bc3f21df56eded2143843f135ae967e/index.xml&lt;/path&gt;
+    &lt;/asset&gt;
+&lt;/view&gt;</code></pre>
+    
+    <p>The path is a normal relative asset path URL.</p>
+
+</body>
+</html>

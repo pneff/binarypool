@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Expiration</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Expiration</h1>
+    
+    <h2>Expiration rules</h2>
+    <p>The binary pool has an expiration policy which works based on the
+    notion of TTLs and callbacks.</p>
+    
+    <p>Each bucket defines a TTL which defines the expiry interval. Always
+    after TTL days the binary is considered for deletion.</p>
+        
+    <p>A binary can have one or more callbacks provided by the clients
+    (configured with the Callback parameter of the Create new binary command).
+    These callbacks are an URL. When a binary is considered for deletions, the
+    callback is executed. If all callbacks returns the exact string "EXPIRED"
+    (case and spaces matter) the binary is deleted. Otherwise it's kept around
+    for another TTL days.</p>
+    
+    <p>If the modification date is updated (Update modification date), the
+    expiry date is incremented by TTL days. So the update modification date
+    method effectively tells the binary pool that the client still cares.</p>
+    
+    <h2>Best practices</h2>
+    <p>The easiest way to make sure binaries remain in the binary pool is to
+    <a href="cmd_touch.html">touch them</a> periodically. Ideally you set up a
+    daily or weekly cron job which goes through all the images which are still
+    required and calls the touch command for those. In many architectures this
+    is easier to implement than the callback.</p>
+</body>
+</html>

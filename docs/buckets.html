@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Binary Pool - Buckets</title>
+    <link rel="stylesheet" href="docs.css" type="text/css" />
+</head>
+
+<body>
+    <h1>Buckets</h1>
+    
+    <p>The Binary Pool service is based around the notion of buckets. The
+    first directory part of any URL on the binary pool is a bucket. Each
+    bucket can define its own renditions which are automatically generated
+    when creating a new binary in that bucket.</p>
+
+    <h2>Defined buckets</h2>
+    <p>To get a list of all defined buckets use the
+    <a href="cmd_list_buckets.html">List buckets</a> command.</p>
+    
+    <h2>Creating New Buckets</h2>
+    <p>To create a new bucket follow these steps:</p>
+    <ol>
+        <li>Update <tt>conf/binarypool.php</tt> with the definition of the
+            bucket.</li>
+        <li>Create a directory under <tt>$ROOT</tt> with the same name as the
+            bucket. Make sure the web server has permission to write to that
+            directory.</li>
+    </ol>
+</body>
+</html>

@@ -75,7 +75,7 @@ class binarypool_config {
         if (!file_exists(self::$root)) {
             mkdir(self::$root);
             if (!file_exists(self::$root)) {
-                throw new binarypool_exception(107, 500, "Binarypool path is not available.");
+                throw new binarypool_exception(107, 500, "Binary Pool path is not available.");
             }
         }
         self::$root = realpath(self::$root);
