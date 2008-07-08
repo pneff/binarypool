@@ -19,6 +19,7 @@ function cleanSymlinks() {
     $cmd = binarypool_config::getUtilityPath('symlinks');
     system("$cmd -cdrs " . binarypool_config::getRoot() . "*/created");
     system("$cmd -cdrs " . binarypool_config::getRoot() . "*/expiry");
+    system("$cmd -cdrsv " . binarypool_config::getRoot() . "*/downloaded |grep '/dev/null' |xargs -0 rm");
 }
 
 cleanSymlinks();

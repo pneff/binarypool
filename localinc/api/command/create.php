@@ -127,19 +127,23 @@ class api_command_create extends api_command_base {
         $this->log->debug("Downloading file: %s", $url);
         
         $httpc = new binarypool_httpclient();
-        $lastmodified = $this->getURLLastModified($url);
+        $lastmodified = self::lastModified($this->bucket, $url);
         $result = array('code' => 0, 'headers' => array(), 'body' => ''); 
         $retries = 3;
         
-        while ( $retries ) {
-            try {
-                $result = $httpc->get($url, $lastmodified);
-                if ( $result['code'] < 500 ) { break; }
-            } catch ( binarypool_httpclient_exception $e ) {
-                // ignore - dropped connections etc. - retry
+        if ( $lastmodified['revalidate'] ) {
+            while ( $retries ) {
+                try {
+                    $result = $httpc->get($url, $lastmodified['time']);
+                    if ( $result['code'] < 500 ) { break; }
+                } catch ( binarypool_httpclient_exception $e ) {
+                    // ignore - dropped connections etc. - retry
+                }
+                sleep(1);
+                $retries--;
             }
-            sleep(1);
-            $retries--;
+        } else {
+            $result['code'] = 304;
         }
         
         if ( 304 == $result['code'] ) {
@@ -187,35 +191,59 @@ class api_command_create extends api_command_base {
      * repeated attempts to download the same (non 200) URL in a short
      * time period
      *
+     * @param String $bucket
      * @param String $url
-     * @return int Unix timestamp (0 means not found)
+     * @return array(time => int Unix timestamp (0 means not found), revalidate => (true|false), cache_age => int) 
      */
-    protected function getURLLastModified($url) {
-        $symlink = binarypool_views::getDownloadedViewPath($this->bucket, $url);
+    protected static function getURLLastModified($bucket, $url) {
+        $symlink = binarypool_views::getDownloadedViewPath($bucket, $url);
         
         // Check the link target exists - filemtime would raise a PHP
         // WARNING if not exists
         if ( file_exists($symlink) ) {
             
+            $stat = lstat($symlink);
+            $now = time();
+            
             if ( readlink($symlink) == '/dev/null' ) {
-                
-                $stat = lstat($symlink);
-                $now = time();
                 $failed_time = $now - $stat['mtime'];
                 
                 if ( $failed_time > binarypool_config::getBadUrlExpiry() ) {
                     unlink($symlink);
-                    return 0;
+                    return array('time'=>0, 'revalidate'=> True, 'cache_age' => $failed_time);
                 }
                 
                 $failed_nextfetch = ($stat['mtime'] + binarypool_config::getBadUrlExpiry()) - $now;
                 throw new binarypool_exception( 122, 400, "File download failed $failed_time seconds ago. Re-fetching allowed in next time in $failed_nextfetch seconds: $url");
                 
             }
-            // return mtime for the link target
-            return filemtime($symlink);
+            
+            $cache_age = $now - $stat['mtime'];
+            $revalidate = False;
+            if ( $cache_age > binarypool_config::getCacheRevalidate() ) {
+                $revalidate = True; 
+            }
+            
+            return array(
+                'time'=>filemtime($symlink),
+                'revalidate' => $revalidate,
+                'cache_age' => $cache_age
+                ); 
         }
         
-        return 0;
+        return array('time'=>0, 'revalidate'=> True, 'cache_age' => 0);
+    }
+    
+    /**
+     * Wraps getURLLastModified in a static cache
+     *
+     * @see getURLLastModified
+     */
+    public static function lastModified($bucket, $url) {
+        static $modified = array();
+        if ( empty($modified[$bucket.$url]) ) {
+            $modified[$bucket.$url] = self::getURLLastModified($bucket, $url); 
+        }
+        return $modified[$bucket.$url];
     }
 }

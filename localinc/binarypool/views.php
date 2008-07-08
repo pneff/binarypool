@@ -101,8 +101,15 @@ class binarypool_views {
         
         $assetDir = '../../' . self::getCleanedBasepath($asset);
         $symlink = self::getDownloadedViewPath($bucket, $metadata['URL']);
+        
+        $lastmodified = api_command_create::lastModified($metadata['URL']);
+        
+        $refresh = False;
+        if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate() ) {
+            $refresh = True;
+        }
                 
-        self::createLink($assetDir, $symlink);
+        self::createLink($assetDir, $symlink, $refresh);
     }
     
     /**
@@ -159,13 +166,23 @@ class binarypool_views {
      * Creates a symbolic link, also creating all parent directories
      * if necessary.
      */
-    private static function createLink($target, $link) {
+    private static function createLink($target, $link, $refresh = false) {
         if (! file_exists(dirname($link))) {
             mkdir(dirname($link), 0755, true);
         }
 
         if (! file_exists($link)) {
+            
             symlink($target, $link);
+            
+        } else if ( $refresh ) {
+            
+            // "touch" the symlink - use specific to downloaded view where
+            // we only want to revalidate older cache entries
+            $tmplink = sprintf("/tmp/%s%s", sha1($symlink), microtime(True));
+            symlink($target, $tmplink);
+            rename($tmplink, $link);
+            
         }
     }
 }

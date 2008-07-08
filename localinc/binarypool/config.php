@@ -10,7 +10,8 @@ class binarypool_config {
     private static $root = '/tmp/binarypool';
     private static $logpath = '/tmp/binarypool-log';
     private static $paths = array();
-    private static $badUrlExpiry = 3600; 
+    private static $badUrlExpiry = 3600;
+    private static $cacheRevalidate = 86400; 
     private static $useragent = 'Binary Pool/1.0';
     
     /**
@@ -56,6 +57,17 @@ class binarypool_config {
     }
     
     /**
+     * Time in seconds after which downloaded content should be
+     * re-validated (via conditional get / If-Modified-Since)
+     *
+     * @return int seconds
+     */
+    public static function getCacheRevalidate() {
+        if (! self::$loaded) self::load();
+        return self::$cacheRevalidate;
+    }
+    
+    /**
      * Returns a Useragent string for the binary "fetcher"
      * used to pull new images via HTTP 
      */
@@ -96,6 +108,7 @@ class binarypool_config {
         self::$logpath = $LOGPATH;
         self::$paths = $PATHS;
         self::$badUrlExpiry = $BADURLEXPIRY;
+        self::$cacheRevalidate = $CACHEREVALIDATE;
         self::$useragent = $USERAGENT;
     }
 }

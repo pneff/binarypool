@@ -89,4 +89,21 @@ $PATHS = array(
  * You should add your company name and URL here.
  */
 $USERAGENT = 'Binary Pool/1.0';
+
+/**
+ * For fetching binaries from URLs, the duration in seconds,
+ * once a URL flagged as bad (after repeated 5xx reponses)
+ * the the URL should continue to be regarded as bad 
+ * After this time, the flag is removed and further fetch
+ * attempts will be made
+ */
+$BADURLEXPIRY = 3600;
+
+/**
+ * Time in seconds after which downloaded binaries (via URL)
+ * should be revalidated against their source (via conditional
+ * GET / If-Modified-Since)
+ */
+$CACHEREVALIDATE = 86400;
+
 ?>
