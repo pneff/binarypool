@@ -25,7 +25,7 @@ The following Unix tools are required:
 Binary Pool builds on top of Okapi. You need to check out Okapi and the
 logging extension:
 
-  $ cd inc && svn co https://svn.liip.ch/repos/public/okapi/core/trunk/inc/api
+  $ cd inc && svn co https://svn.liip.ch/repos/public/okapi/core/tags/1.1.0/inc/api
   $ cd ../ext && svn co https://svn.liip.ch/repos/public/okapi/ext/log/trunk/inc log
 
 
