@@ -58,6 +58,9 @@ class binarypool_mime {
             case 'image/pdf':
                 $ext = 'pdf';
                 break;
+            case 'application/x-shockwave-flash':
+                $ext = 'flv';
+                break;
         }
         
         if ($ext === '') {
