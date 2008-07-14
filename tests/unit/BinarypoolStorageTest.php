@@ -185,5 +185,44 @@ class BinarypoolStorageTest extends BinarypoolTestCase {
         $this->assertTrue(file_exists($trashDir), 'Folder was not moved to trash.');
         $this->assertTrue(file_exists($trashDir . '/index.xml'), 'Asset file was not moved to trash.');
     }
+
+    /**
+     * Fix the extension according to MIME type.
+     */
+    function testSaveFixExtension() {
+        $this->assertFalse(file_exists(self::$BUCKET . 'f0/f0fb27ea804fcdc0d4628071a45562aa2803267e/upload1.jpg'));
+
+        $file = realpath(dirname(__FILE__).'/../res/upload1.bin');
+        $asset = $this->storage->save('IMAGE', array('_' => array('file' => $file)));
+        $this->assertNotNull($asset);
+        $this->assertEqual('test/f0/f0fb27ea804fcdc0d4628071a45562aa2803267e/index.xml', $asset);
+        $this->assertTrue(file_exists(self::$BUCKET . 'f0/f0fb27ea804fcdc0d4628071a45562aa2803267e/upload1.jpg'),
+            'Original file was not written to file system.');
+        $this->assertFalse(file_exists(self::$BUCKET . 'f0/f0fb27ea804fcdc0d4628071a45562aa2803267e/upload1.bin'),
+            'Original file got written with wrong extension.');
+        $this->assertTrue(file_exists(binarypool_config::getRoot() . $asset),
+            'Asset file was not written to file system.');
+    }
+
+    /**
+     * Fix the extension of manually uploaded renditions.
+     */
+    function testSaveRenditionFixExtension() {
+        $this->assertFalse(file_exists(self::$BUCKET . 'cb/cbf9f9f453acaba556e00b48951815da5611f975/vw_golf_smaller.jpg'));
+
+        $asset = $this->storage->save('IMAGE',
+            array('_'          => array('file' => dirname(__FILE__).'/../res/vw_golf_smaller.jpg'),
+                  'detailpage' => array('file' => dirname(__FILE__).'/../res/upload1.bin')));
+        $this->assertNotNull($asset);
+        $this->assertEqual('test/cb/cbf9f9f453acaba556e00b48951815da5611f975/index.xml', $asset);
+        $this->assertTrue(file_exists(self::$BUCKET . 'cb/cbf9f9f453acaba556e00b48951815da5611f975/vw_golf_smaller.jpg'),
+            'Original file was not written to file system.');
+        $this->assertTrue(file_exists(self::$BUCKET . 'cb/cbf9f9f453acaba556e00b48951815da5611f975/upload1.jpg'),
+            'detailpage rendition file was not written to file system.');
+        $this->assertFalse(file_exists(self::$BUCKET . 'cb/cbf9f9f453acaba556e00b48951815da5611f975/upload1.bin'),
+            'detailpage rendition file was written to file system with the wrong extension.');
+        $this->assertTrue(file_exists(binarypool_config::getRoot() . $asset),
+            'Asset file was not written to file system.');
+    }
 }
 ?>

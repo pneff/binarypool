@@ -87,11 +87,16 @@ class binarypool_render_image {
             case 'image/bmp':
             case 'image/tiff':
             case 'application/octet-stream':
+            case 'image/jpeg':
                 $newExtension = 'jpg';
                 break;
             case 'application/pdf':
             case 'image/pdf':
+            case 'image/png':
                 $newExtension = 'png';
+                break;
+            case 'image/gif':
+                $newExtension = 'gif';
                 break;
         }
         if ($newExtension == '' || !in_array($newExtension, $allowedExtensions)) {

@@ -23,6 +23,51 @@ class binarypool_mime {
     }
     
     /**
+     * Fixes the extension of the passed in file name according to the
+     * file's MIME type.
+     * @param $file string: Absolute file path.
+     * @return string: File name (no path) with fixed extension
+     */
+    public static function fixExtension($file, $basename) {
+        $info = pathinfo($file);
+        if (!empty($basename)) {
+            $info = pathinfo($basename);
+        }
+        $base = $info['filename'];
+        $ext = isset($info['extension']) ? $info['extension'] : '';
+        
+        $mime = self::getMimeType($file);
+        
+        switch ($mime) {
+            case 'image/bmp':
+                $ext = 'bmp';
+                break;
+            case 'image/tiff':
+                $ext = 'tif';
+                break;
+            case 'image/jpeg':
+                $ext = 'jpg';
+                break;
+            case 'image/gif':
+                $ext = 'gif';
+                break;
+            case 'image/png':
+                $ext = 'png';
+                break;
+            case 'application/pdf':
+            case 'image/pdf':
+                $ext = 'pdf';
+                break;
+        }
+        
+        if ($ext === '') {
+            return $base;
+        } else {
+            return $base . '.' . $ext;
+        }
+    }
+    
+    /**
      * Uses finfo if available to get the MIME type.
      */
     protected static function getMimeTypeWithFinfo($file) {

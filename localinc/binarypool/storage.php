@@ -3,6 +3,8 @@ require_once(dirname(__FILE__) . '/exception.php');
 require_once(dirname(__FILE__) . '/asset.php');
 require_once(dirname(__FILE__) . '/render.php');
 require_once(dirname(__FILE__).  '/config.php');
+require_once(dirname(__FILE__).  '/validate.php');
+require_once(dirname(__FILE__).  '/mime.php');
 require_once(dirname(__FILE__).  '/storage_driver_file.php');
 require_once(dirname(__FILE__).  '/storage_driver_s3.php');
 
@@ -148,13 +150,10 @@ class binarypool_storage {
             }
             
             $filename = isset($file['filename']) ? $file['filename'] : '';
-            if ($filename == '') {
-                $filename = basename($file['file']);
-            }
+            $filename = binarypool_mime::fixExtension($file['file'], $basename);
             if ($filename == 'index.xml') {
                 $filename = 'index-' . $rendition . '.xml';
             }
-            
             $this->storage->save($file['file'], $dir . $filename);
             $renditions[$rendition] = $dir . $filename;
         }
@@ -200,10 +199,7 @@ class binarypool_storage {
      * Saves the file as original.
      */
     private function saveOriginalFile($dir, $file, $basename) {
-        $filename = basename($file);
-        if (! empty($basename)) {
-            $filename = $basename;
-        }
+        $filename = binarypool_mime::fixExtension($file, $basename);
         if (empty($filename)) {
             $filename = 'original';
         }
