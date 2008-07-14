@@ -26,6 +26,7 @@ class binarypool_asset {
             $this->locationAbsolute = false;
             $this->created = time();
             $this->expiry = 0;
+            $this->type = '';
         } else if (!file_exists($file) || !is_file($file)) {
             throw new binarypool_exception(112, 500, 'Asset file does not exist: ' . $file);
         }  else {
@@ -42,6 +43,10 @@ class binarypool_asset {
     
     public function getOriginal() {
         return $this->original;
+    }
+    
+    public function getType() {
+        return $this->type;
     }
     
     /**
@@ -310,6 +315,7 @@ class binarypool_asset {
             
             if ($isOriginal) {
                 $this->setOriginal($renditionLocation);
+                $this->type = $node->getAttribute('type');
             } else {
                 $this->setRendition($renditionName, $renditionLocation);
             }

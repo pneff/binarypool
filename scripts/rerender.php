@@ -23,7 +23,8 @@ function walk_callback($dir) {
     if (file_exists($dir . 'index.xml')) {
         $asset = new binarypool_asset($dir . 'index.xml');
         $processed++;
-        $storage->save('IMAGE', array('_' => array('file' => $asset->getOriginal())));
+        $storage->save($asset->getType(),
+            array('_' => array('file' => $asset->getOriginal())));
     }
 }
 
