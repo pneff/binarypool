@@ -7,7 +7,9 @@ class binarypool_mime {
      */
     public static function getMimeType($file) {
         $strategies = array(
+            'Hardcoded',
             'Finfo',
+            'CmdLineFileCustom',
             'CmdLineFile',
             'GetImageSize',
         );
@@ -59,6 +61,9 @@ class binarypool_mime {
                 $ext = 'pdf';
                 break;
             case 'application/x-shockwave-flash':
+                $ext = 'swf';
+                break;
+            case 'video/x-flv':
                 $ext = 'flv';
                 break;
         }
@@ -68,6 +73,52 @@ class binarypool_mime {
         } else {
             return $base . '.' . $ext;
         }
+    }
+    
+    /**
+     * Returns the size of the image.
+     */
+    public function getImageSize($file, $mime = null) {
+        if (is_null($mime)) {
+            $mime = self::getMimeType($file);
+        }
+        
+        if ($mime == 'application/pdf' or $mime == 'image/eps') {
+            // Try to get size from external pdfconverter utility
+            $cmd = binarypool_config::getUtilityPath('pdfconverter');
+            if (!is_null($cmd)) {
+                $cmd .= ' -s ';
+                $cmd .= ' ' . escapeshellarg($file);
+                $out = shell_exec($cmd);
+                $out = explode("\n", $out);
+                if (strpos($out[0], 'width:') === 0 && strpos($out[1], 'height:') === 0) {
+                    return array(
+                        'unit' => 'mm',
+                        'width' => intval(substr($out[0], 6)),
+                        'height' => intval(substr($out[1], 7)),
+                    );
+                }
+            }
+        }
+        
+        $size = getimagesize($file);
+        return array(
+            'width' => intval($size[0]),
+            'height' => intval($size[1]),
+            'unit' => 'px',
+        );
+    }
+    
+    /**
+     * Some hardcoded detections.
+     */
+    protected static function getMimeTypeWithHardcoded($file) {
+        $f = fopen($file, "rb");
+        $part = fread($f, 3);
+        if ($part === 'FLV') {
+            return 'video/x-flv';
+        }
+        return null;
     }
     
     /**
@@ -84,7 +135,10 @@ class binarypool_mime {
         
         // fix for a bug - EPS and PDF are detected as audio/x-mod sometimes
         $tmpname = escapeshellarg($file);
-        if ($mime == 'audio/x-mod') {
+        if ($mime == 'application/octet-stream') {
+            // Not good enough
+            return null;
+        } else if ($mime == 'audio/x-mod') {
             $mime = self::getMimeTypeWithCmdLineFile($file);
         } else if (strpos($mime, "application/") === 0) {
             if (in_array($mime, array('image/eps', 'image/pdf', 'application/pdf'))) {
@@ -98,11 +152,33 @@ class binarypool_mime {
     }
     
     /**
+     * Uses `file' on the command line with our custom magic.mime addition
+     * to get the MIME type.
+     */
+    protected static function getMimeTypeWithCmdLineFileCustom($file) {
+        $default = "/usr/share/file/magic";
+        if (!file_exists($default)) {
+            return null;
+        }
+        
+        $cmd = binarypool_config::getUtilityPath('file');
+        $magicfiles = escapeshellarg(API_PROJECT_DIR . "conf/magic/magic:$default");
+        $cmd = "$cmd -m $magicfiles -ib " . escapeshellarg($file);
+        $mime = trim(shell_exec($cmd));
+        
+        if ($mime == '' || $mime == 'regular file') {
+            return null;
+        } else {
+            return $mime;
+        }
+    }
+    
+    /**
      * Uses `file' on the command line to get the MIME type.
      */
     protected static function getMimeTypeWithCmdLineFile($file) {
         $cmd = binarypool_config::getUtilityPath('file');
-        $mime = trim(shell_exec("file -ib " . escapeshellarg($file)));
+        $mime = trim(shell_exec("$cmd -ib " . escapeshellarg($file)));
         
         if ($mime == '' || $mime == 'regular file') {
             return null;

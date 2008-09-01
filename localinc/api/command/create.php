@@ -51,6 +51,7 @@ class api_command_create extends api_command_base {
         
         // Add callback
         if ($callback != '') {
+            $callback = str_replace('{asset}', $asset, $callback);
             $assetObj = new binarypool_asset($absStoragePath);
             $assetObj->addCallback($callback);
             file_put_contents($absStoragePath, $assetObj->getXML());

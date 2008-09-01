@@ -57,10 +57,6 @@ abstract class BinarypoolTestCase extends UnitTestCase {
      */
     protected function assertXPath($xp, $query, $value) {
         $nodevalue = $this->getXPathValue($xp, $query);
-        if ($nodevalue === false) {
-            return;
-        }
-
         $this->assertEqual($nodevalue, $value, "$query did not return '$value' but '" . $nodevalue . "'");
     }
 

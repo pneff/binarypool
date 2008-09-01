@@ -24,9 +24,11 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $this->assertXPath($xp, '/registry/@version', '3.0');
         $this->assertXPath($xp, '/registry/items/item/@type', 'IMAGE');
         $this->assertXPath($xp, '/registry/items/item/@isRendition', 'false');
+        $this->assertXPath($xp, '/registry/items/item/webobject/@unit', 'px');
         $this->assertXPath($xp, '/registry/items/item/webobject/objectWidth', '557');
         $this->assertXPath($xp, '/registry/items/item/webobject/objectHeight', '344');
         $this->assertXPath($xp, '/registry/items/item/imageinfo/@isLandscape', 'true');
+        $this->assertXPath($xp, '/registry/items/item/imageinfo/@unit', 'px');
         $this->assertXPath($xp, '/registry/items/item/imageinfo/width', '557');
         $this->assertXPath($xp, '/registry/items/item/imageinfo/height', '344');
         $this->assertXPath($xp, '/registry/items/item/location', 'test/somehashhere/vw_golf.jpg');
@@ -46,7 +48,8 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         
         // Resize image
         $resizedFile = $basepath . 'resultlist';
-        $out = binarypool_render_image::resize($basepath . 'vw_golf.jpg', $resizedFile, 90, 90);
+        $out = binarypool_render_image::render($basepath . 'vw_golf.jpg', $resizedFile,
+            null, array('width' => 90, 'height' => 90));
         $this->assertEqual($out, $resizedFile . '.jpg', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
         
         // Create asset file
@@ -272,6 +275,33 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $this->assertXPath($xp, '/registry/items/item/mimetype', 'image/jpeg');
         $this->assertXPath($xp, '/registry/items/item/size', '106237');
         return $asset;
+    }
+
+    function testPDFAssetWithoutRenditions() {
+        // Create asset file
+        $asset = new binarypool_asset();
+        $asset->setBasePath('test/somehashhere');
+        $asset->setOriginal(realpath(dirname(__FILE__).'/../res/emil_frey_logo_2.pdf'));
+        $xml = $asset->getXML();
+        
+        // Load XML
+        $dom = DOMDocument::loadXML($xml);
+        $xp = new DOMXPath($dom);
+        
+        // Test
+        $this->assertXPath($xp, '/registry/@version', '3.0');
+        $this->assertXPath($xp, '/registry/items/item/@type', 'IMAGE');
+        $this->assertXPath($xp, '/registry/items/item/@isRendition', 'false');
+        $this->assertXPath($xp, '/registry/items/item/webobject/@unit', 'mm');
+        $this->assertXPath($xp, '/registry/items/item/webobject/objectWidth', '203');
+        $this->assertXPath($xp, '/registry/items/item/webobject/objectHeight', '40');
+        $this->assertXPath($xp, '/registry/items/item/imageinfo/@isLandscape', 'true');
+        $this->assertXPath($xp, '/registry/items/item/imageinfo/@unit', 'mm');
+        $this->assertXPath($xp, '/registry/items/item/imageinfo/width', '203');
+        $this->assertXPath($xp, '/registry/items/item/imageinfo/height', '40');
+        $this->assertXPath($xp, '/registry/items/item/location', 'test/somehashhere/emil_frey_logo_2.pdf');
+        $this->assertXPath($xp, '/registry/items/item/mimetype', 'application/pdf');
+        $this->assertXPath($xp, '/registry/items/item/size', '28216');
     }
 }
 ?>

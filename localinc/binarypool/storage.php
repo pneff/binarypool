@@ -62,6 +62,14 @@ class binarypool_storage {
     }
     
     /**
+     * Return the absolute path to the given asset file.
+     * The file does not have to exist yet.
+     */
+    public function absolutizeAsset($file) {
+        return $this->assetStorage->absolutize($file);
+    }
+    
+    /**
      * Saves a file and returns a path to the asset file.
      */
     public function save($type, $files) {
@@ -71,15 +79,17 @@ class binarypool_storage {
         $origFilename = isset($files['_']['filename']) ? $files['_']['filename'] : '';
         
         $dir = $this->getDirectory($origFile);
-        $originalFile = $this->saveOriginalFile($dir, $origFile, $origFilename);
-        
         $assetFile = $dir . 'index.xml';
-        $renditions = $this->saveRenditions($type, $dir, $origFile, $files);
+        $originalFile = $this->saveOriginalFile($dir, $origFile, $origFilename);
+        $renditions = $this->saveRenditions($type, $dir, $origFile,
+            $files, $assetFile);
         
-        return $this->createAssetFile($assetFile, $dir, $originalFile, $renditions);
+        return $this->createAssetFile($assetFile, $dir, $originalFile,
+            $renditions, $type);
     }
 
-    private function createAssetFile($assetFile, $dir, $originalFile, $renditions) {
+    private function createAssetFile($assetFile, $dir, $originalFile,
+            $renditions, $type) {
         $assetFileAbs = $this->assetStorage->absolutize($assetFile);
 
         $asset = null;
@@ -94,7 +104,6 @@ class binarypool_storage {
         // asset file
         $storeAbsolute = ($this->assetStorage->absolutize($assetFile) != $this->storage->absolutize($assetFile));
         $asset->setBasePath($dir, $storeAbsolute);
-        
         $asset->setOriginal($this->storage->absolutize($originalFile));
         foreach ($renditions as $rendition => $filename) {
             $asset->setRendition($rendition, $this->absolutize($filename));
@@ -105,6 +114,7 @@ class binarypool_storage {
             throw new BinaryPoolException(116, 500, 'Bucket does not have a defined TTL: ' . $this->bucketName);
         }
         $asset->setExpiry(time() + (intval($this->bucketConfig['ttl']) * 24 * 60 * 60));
+        $asset->setType($type);
         
         // Save
         if (! file_exists(dirname($assetFileAbs))) {
@@ -127,17 +137,26 @@ class binarypool_storage {
         }
     }
     
-    private function saveRenditions($type, $dir, $originalFile, $files) {
+    private function saveRenditions($type, $dir, $originalFile, $files, $assetFile) {
         return array_merge(
-            $this->generateRenditions($type, $dir, $originalFile, $files),
+            $this->generateRenditions($type, $dir, $originalFile, $files, $assetFile),
             $this->saveUploadedRenditions($dir, $files));
     }
     
-    private function generateRenditions($type, $dir, $originalFile, $files) {
+    private function generateRenditions($type, $dir, $originalFile, $files, $assetFile) {
         $outputDir = $this->storage->getRenditionsDirectory($dir);
         $renditions = binarypool_render::render($type, $this->bucketName,
                 $originalFile, $outputDir,
-                array_keys($files));
+                array_keys($files),
+                $assetFile);
+        return $this->storage->saveRenditions($renditions, $dir);
+    }
+    
+    public function storageGetRenditionsDirectory($dir) {
+        return $this->storage->getRenditionsDirectory($dir);
+    }
+    
+    public function storageSaveRenditions($renditions, $dir) {
         return $this->storage->saveRenditions($renditions, $dir);
     }
 
@@ -150,7 +169,7 @@ class binarypool_storage {
             }
             
             $filename = isset($file['filename']) ? $file['filename'] : '';
-            $filename = binarypool_mime::fixExtension($file['file'], $basename);
+            $filename = binarypool_mime::fixExtension($file['file'], $filename);
             if ($filename == 'index.xml') {
                 $filename = 'index-' . $rendition . '.xml';
             }

@@ -26,7 +26,7 @@ class binarypool_asset {
             $this->locationAbsolute = false;
             $this->created = time();
             $this->expiry = 0;
-            $this->type = '';
+            $this->type = null;
         } else if (!file_exists($file) || !is_file($file)) {
             throw new binarypool_exception(112, 500, 'Asset file does not exist: ' . $file);
         }  else {
@@ -47,6 +47,10 @@ class binarypool_asset {
     
     public function getType() {
         return $this->type;
+    }
+    
+    public function setType($type) {
+        $this->type = $type;
     }
     
     /**
@@ -202,27 +206,27 @@ class binarypool_asset {
             throw new binarypool_exception(102, 404, "Referenced file in asset does not exist: $file");
         }
         
-        $info = getimagesize($file);
-        $width = intval($info[0]);
-        $height = intval($info[1]);
+        $info = binarypool_mime::getImageSize($file);
         $fileinfo = binarypool_fileinfo::getFileinfo($file);
         $mime = $fileinfo['mime'];
         $size = $fileinfo['size'];
         $hash = $fileinfo['hash'];
-        $type = binarypool_render::getType($mime);
+        $type = is_null($this->type) ?
+            binarypool_render::getType($mime) :
+            $this->type;
         $isRendition = is_null($rendition) ? 'false' : 'true';
-        $isLandscape = ($width > $height) ? 'true' : 'false';
+        $isLandscape = ($info['width'] > $info['height']) ? 'true' : 'false';
         
         $xml = '<item type="' . $type . '" isRendition="' . $isRendition . '">';
         
-        $xml .= '<webobject isVisual="true" isAudioOnly="false">';
-        $xml .= '<objectWidth>' . $width . '</objectWidth>';
-        $xml .= '<objectHeight>' . $height . '</objectHeight>';
+        $xml .= '<webobject isVisual="true" isAudioOnly="false" unit="' . htmlspecialchars($info['unit']) . '">';
+        $xml .= '<objectWidth>' . $info['width'] . '</objectWidth>';
+        $xml .= '<objectHeight>' . $info['height'] . '</objectHeight>';
         $xml .= '</webobject>';
 
-        $xml .= '<imageinfo isLandscape="' . $isLandscape . '">';
-        $xml .= '<width>' . $width . '</width>';
-        $xml .= '<height>' . $height . '</height>';
+        $xml .= '<imageinfo isLandscape="' . $isLandscape . '" unit="' . htmlspecialchars($info['unit']) . '">';
+        $xml .= '<width>' . $info['width'] . '</width>';
+        $xml .= '<height>' . $info['height'] . '</height>';
         $xml .= '</imageinfo>';
         
         if ($isRendition) {
@@ -318,6 +322,7 @@ class binarypool_asset {
                 $this->type = $node->getAttribute('type');
             } else {
                 $this->setRendition($renditionName, $renditionLocation);
+                $this->type = null;
             }
         }
     }

@@ -25,4 +25,24 @@ class BinarypoolMimeTest extends BinarypoolTestCase {
             'application/x-shockwave-flash'
         );
     }
+    
+    /**
+     * Test the size detection for JPEG files.
+     */
+    function testSizeJPG() {
+        $info = binarypool_mime::getImageSize(realpath(dirname(__FILE__).'/../res/vw_golf.jpg'));
+        $this->assertEqual($info['width'], '557');
+        $this->assertEqual($info['height'], '344');
+        $this->assertEqual($info['unit'], 'px');
+    }
+    
+    /**
+     * Test the size detection for PDF files.
+     */
+    function testSizePDF() {
+        $info = binarypool_mime::getImageSize(realpath(dirname(__FILE__).'/../res/emil_frey_logo_2.pdf'));
+        $this->assertEqual($info['width'], '203');
+        $this->assertEqual($info['height'], '40');
+        $this->assertEqual($info['unit'], 'mm');
+    }
 }

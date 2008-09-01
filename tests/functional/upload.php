@@ -21,6 +21,15 @@ class test_func_upload extends test_base_functional {
     }
     
     /**
+     * Test type in asset XML.
+     */
+    function testUploadType() {
+        $this->testUpload();
+        $this->get('/test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
+        $this->assertAttribute('/registry/items/item@type', 'IMAGE');
+    }
+    
+    /**
      * Tests error handling if we don't provide a file.
      */
     function testUploadWithoutFile() {
@@ -168,6 +177,15 @@ class test_func_upload extends test_base_functional {
     }
     
     /**
+     * Test type in asset XML.
+     */
+    function testUploadFlashMovieType() {
+        $this->testUploadFlashMovie();
+        $this->get('/test/55/55395db0c5867a542da27aed649e661e25430ffc/index.xml');
+        $this->assertAttribute('/registry/items/item@type', 'MOVIE');
+    }
+    
+    /**
      * Test if the asset file of an uploaded movie is correct.
      */
     function testUploadFlashMovieAssetFile() {
@@ -211,6 +229,28 @@ class test_func_upload extends test_base_functional {
         $this->get('/test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
         $this->assertEqual(api_response::getInstance()->getCode(), 200);
         $this->assertText('/registry/callback', 'http://binarypool/falsetest');
+    }
+    
+    /**
+     * Test if the callback replaces the {asset} variable.
+     */
+    function testUploadWithDynamicCallback() {
+        $this->post('/test', array(
+            'Type' => 'IMAGE',
+            'File' => '@'.realpath(dirname(__FILE__).'/../res/vw_golf.jpg'),
+            'Callback' => 'http://binarypool/falsetest?asset={asset}'
+        ));
+        $this->assertEqual(api_response::getInstance()->getCode(), 201);
+        $headers = api_response::getInstance()->getHeaders();
+        $this->assertEqual('test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml', $headers['Location']);
+        
+        // Parse
+        $this->assertText('/saved/asset', 'test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
+        
+        // Get asset file
+        $this->get('/test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
+        $this->assertEqual(api_response::getInstance()->getCode(), 200);
+        $this->assertText('/registry/callback', 'http://binarypool/falsetest?asset=test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
     }
     
     /**
@@ -339,6 +379,15 @@ class test_func_upload extends test_base_functional {
         $this->assertText('/saved/asset', 'test/5e/5eaf447e8850037e46e8d27eb23447834e9a4075/index.xml');
     }
     
+    /**
+     * Test type in asset XML.
+     */
+    function testUploadXMLType() {
+        $this->testUploadXML();
+        $this->get('/test/5e/5eaf447e8850037e46e8d27eb23447834e9a4075/index.xml');
+        $this->assertAttribute('/registry/items/item@type', 'XML');
+    }
+
     /**
      * Non-wellformed XML documents are rejected.
      */

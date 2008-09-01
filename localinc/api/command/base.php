@@ -11,6 +11,7 @@ class api_command_base extends api_command {
         $this->log = new api_log();
         $this->bucket = isset($route['bucket']) ? $route['bucket'] : '';
         $this->response->setCode(200);
+        $this->response->setContentLengthOutput(true);
     }
     
     public function getData() {

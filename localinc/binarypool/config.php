@@ -8,7 +8,6 @@ class binarypool_config {
     private static $loaded = false;
     private static $buckets = array();
     private static $root = '/tmp/binarypool';
-    private static $logpath = '/tmp/binarypool-log';
     private static $paths = array();
     private static $badUrlExpiry = 3600;
     private static $cacheRevalidate = 86400; 
@@ -31,19 +30,15 @@ class binarypool_config {
     }
     
     /**
-     * Returns the directory for logging activity to.
-     */
-    public static function getLogPath() {
-        if (! self::$loaded) self::load();
-        return self::$logpath;
-    }
-    
-    /**
      * Returns a path for a utility.
      */
     public static function getUtilityPath($utility) {
         if (! self::$loaded) self::load();
-        return self::$paths[$utility];
+        if (isset(self::$paths[$utility])) {
+            return self::$paths[$utility];
+        } else {
+            return null;
+        }
     }
     
     /**
@@ -105,7 +100,6 @@ class binarypool_config {
             self::$root .= '/';
         }
         
-        self::$logpath = $LOGPATH;
         self::$paths = $PATHS;
         self::$badUrlExpiry = $BADURLEXPIRY;
         self::$cacheRevalidate = $CACHEREVALIDATE;

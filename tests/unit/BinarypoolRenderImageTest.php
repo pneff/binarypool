@@ -17,9 +17,9 @@ class BinarypoolRenderImageTest extends BinarypoolTestCase {
         mkdir($targetPath, 0755, true);
         copy($this->testfile, $targetPath . 'test.jpg');
         
-        $out = binarypool_render_image::resize(
+        $out = binarypool_render_image::render(
             $sourceFile, $resizedFile,
-            100, 80
+            null, array('width' => 100, 'height' => 80)
         );
         $this->assertEqual($out, $resizedFile . '.jpg', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
         
@@ -42,9 +42,9 @@ class BinarypoolRenderImageTest extends BinarypoolTestCase {
         mkdir($targetPath, 0755, true);
         copy($this->testfile, $targetPath . 'test.jpg');
         
-        $out = binarypool_render_image::resize(
+        $out = binarypool_render_image::render(
             $sourceFile, $resizedFile,
-            800, 800
+            null, array('width' => 800, 'height' => 800)
         );
         $this->assertEqual($out, $resizedFile . '.jpg', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
         
@@ -64,9 +64,9 @@ class BinarypoolRenderImageTest extends BinarypoolTestCase {
         
         mkdir($targetPath, 0755, true);
         
-        $out = binarypool_render_image::resize(
+        $out = binarypool_render_image::render(
             $sourceFile, $resizedFile,
-            300, 300
+            null, array('width' => 300, 'height' => 300)
         );
         $this->assertEqual($out, $resizedFile . '.png', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
         

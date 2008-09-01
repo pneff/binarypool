@@ -102,7 +102,7 @@ class binarypool_views {
         $assetDir = '../../' . self::getCleanedBasepath($asset);
         $symlink = self::getDownloadedViewPath($bucket, $metadata['URL']);
         
-        $lastmodified = api_command_create::lastModified($metadata['URL']);
+        $lastmodified = api_command_create::lastModified($bucket, $metadata['URL']);
         
         $refresh = False;
         if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate() ) {
@@ -179,7 +179,7 @@ class binarypool_views {
             
             // "touch" the symlink - use specific to downloaded view where
             // we only want to revalidate older cache entries
-            $tmplink = sprintf("/tmp/%s%s", sha1($symlink), microtime(True));
+            $tmplink = sprintf("/tmp/%s%s", sha1($link), microtime(True));
             symlink($target, $tmplink);
             rename($tmplink, $link);
             

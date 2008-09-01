@@ -1,22 +1,20 @@
 <?php
 require_once(dirname(__FILE__).'/config.php');
 require_once(dirname(__FILE__).'/render.php');
+require_once(dirname(__FILE__).'/render_base.php');
 
-class binarypool_render_image {
+class binarypool_render_image extends binarypool_render_base {
     /**
      * Resize an image file into an output file.
      *
-     * @param $source: Absolute file path to the original file.
-     * @param $target: Absolute file path without extension to the new file.
-     * @param $maxWidth: Maximum width of the new image. No resizing
-     *                   is done if this is empty. Can be used without
-     *                   specifying maxHeight.
-     * @param $maxHeight: Maximum height of the new image. Must be
-     *                    used together with $maxWidth.
-     * @return: The absolute file path to the rendition including an
-     *          appropriate extension.
+     * Config must provide the following keys:
+     * - width: Maximum width of the output image.
+     * - height: Maximum height of the output image.
      */
-    public static function resize($source, $target, $maxWidth, $maxHeight) {
+    public static function render($source, $target, $assetFile, $config) {
+        $maxWidth = $config['width'];
+        $maxHeight = $config['height'];
+        
         $mime = binarypool_mime::getMimeType($source);
         $target = self::getTargetFile($source, $mime, $target);
         self::convert($source, $target, $mime, $maxWidth, $maxHeight);
@@ -72,7 +70,8 @@ class binarypool_render_image {
         
         $log = new api_log();
         $log->debug("Resizing image using command: $cmd");
-        shell_exec($cmd);
+        $out = shell_exec($cmd);
+        $log->debug("Command output was: $out");
     }
     
     /**

@@ -143,6 +143,16 @@
                 <td>File download failed <em>failed_time</em> seconds ago. Re-fetching allowed in next time in <em>failed_nextfetch</em> seconds: <em>url</em></td>
                 <td>A URL was used that already produced a recent 121 error response - the URL has been temporarily blacklisted but further attempts may be made in <em>failed_nextfetch</em> seconds.</td>
             </tr>
+            <tr>
+                <td>123</td>
+                <td>Could not connect to the queue server <em>server</em></td>
+                <td>The queue rendition class could not connect to the configured ActiveMQ queue server.</td>
+            </tr>
+            <tr>
+                <td>124</td>
+                <td>Missing source rendition for rendition <em>foo</em></td>
+                <td>Configuration error. The rendition depends on a source rendition which is not available.</td>
+            </tr>
         </tbody>
     </table>
     

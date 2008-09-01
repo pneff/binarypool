@@ -9,22 +9,42 @@ require_once(dirname(__FILE__) . '/../inc/api/init.php');
 api_init::start();
 
 // Command line
+$max = 0;
+if (count($argv) > 1 && is_numeric($argv[1])) {
+    $max = intval($argv[1]);
+    unset($argv[1]);
+}
+
 $buckets = array_slice($argv, 1);
 if (count($buckets) == 0) {
-    echo "Usage: " . $argv[0] . " bucket...\n";
+    echo "Usage: " . $argv[0] . " [max] bucket...\n";
+    echo "   max:  Maximum number of assets to convert.\n";
     exit(1);
+}
+
+if ($max > 0) {
+    echo "Converting max. $max assets...\n";
 }
 
 $processed = 0;
 $storage = null;
 function walk_callback($dir) {
-    global $processed, $storage;
+    global $processed, $storage, $max;
     
     if (file_exists($dir . 'index.xml')) {
+        if ($max > 0) {
+            echo $dir . "index.xml\n";
+        }
+        
         $asset = new binarypool_asset($dir . 'index.xml');
         $processed++;
         $storage->save($asset->getType(),
             array('_' => array('file' => $asset->getOriginal())));
+    }
+    
+    if ($processed >= $max) {
+        echo "Processed $processed files. Terminating.\n";
+        exit(0);
     }
 }
 

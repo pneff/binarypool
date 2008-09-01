@@ -224,5 +224,18 @@ class BinarypoolStorageTest extends BinarypoolTestCase {
         $this->assertTrue(file_exists(binarypool_config::getRoot() . $asset),
             'Asset file was not written to file system.');
     }
+
+    function testSaveXMLFile() {
+        $this->testSaveAddRendition();
+        
+        $asset = $this->storage->save('XML',
+            array('_'          => array('file' => dirname(__FILE__).'/../res/xmlfile.xml')));
+        $this->assertEqual('test/5e/5eaf447e8850037e46e8d27eb23447834e9a4075/index.xml', $asset);
+        
+        // Check type
+        $dom = DOMDocument::load(self::$BUCKET . '5e/5eaf447e8850037e46e8d27eb23447834e9a4075/index.xml');
+        $xp = new DOMXPath($dom);
+        $this->assertXPath($xp, '/registry/@version', '3.0');
+        $this->assertXPath($xp, '/registry/items/item/@type', 'XML');
+    }
 }
-?>
