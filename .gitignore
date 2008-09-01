@@ -8,4 +8,9 @@ conf/config.xml
 conf/schema/
 conf/config.d/00-default.yml
 tests/result/
+scripts/common/
+scripts/binarypool_preflight.py
+package/
+conf/binarypool-pneff.php
+scripts/queued_preflight.php
 
