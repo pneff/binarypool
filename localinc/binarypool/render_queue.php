@@ -33,6 +33,8 @@ class binarypool_render_queue extends binarypool_render_base {
         if ($server == '__test__') {
             array_push(self::$messages, $message);
         } else {
+            $log = new api_log();
+            $log->debug("Queueing message: $assetFile");
             self::queueMessage($message);
         }
     }
