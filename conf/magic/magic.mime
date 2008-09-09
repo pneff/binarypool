@@ -1,3 +1,7 @@
 # Additional to the inbuilt magic MIME files
 
 0       belong          0xC5D0D3C6      image/eps
+
+# Extensible markup language (XML), a subset of SGML
+# from Marc Prud'hommeaux (marc@apocalypse.org)
+0       string       \<?xml             text/xml
