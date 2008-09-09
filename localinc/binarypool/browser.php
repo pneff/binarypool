@@ -14,27 +14,17 @@ class binarypool_browser {
      */
     public static function getExpired($bucket) {
         $files = array();
+        $storage = new binarypool_storage($bucket);
         
         for ($day = 0; $day < 100; $day++) {
             // Date directory for given day
             $dateDir = date('Y/m/d', time() - ($day * 24 * 60 * 60));
             
             // Get all asset files which expired in those days
-            $absDateDir = binarypool_config::getRoot() . $bucket . '/expiry/' . $dateDir;
-            if (is_dir($absDateDir)) {
-                if ($dirhandle = opendir($absDateDir)) {
-                    while (($file = readdir($dirhandle)) !== false) {
-                        if ($file != '.' && $file != '..') {
-                            $asset = new binarypool_asset($absDateDir . '/' . $file . '/index.xml');
-                            array_push($files, $asset->getBasePath() . 'index.xml');
-                        }
-                    }
-                    closedir($dirhandle);
-                }
-            }
+            $retval = $storage->listDir('expiry/' . $dateDir);
+            $files = array_merge($files, $retval);
         }
         
         return $files;
     }
 }
-?>

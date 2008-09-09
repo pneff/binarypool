@@ -33,7 +33,46 @@ class binarypool_storage {
         $this->bucketName = $bucket;
         $this->bucketConfig = $buckets[$bucket];
         $this->storage = $this->getStorage($this->bucketConfig);
-        $this->assetStorage = $this->getStorage(null);
+    }
+    
+    public function isFile($file) {
+        return $this->storage->isFile($file);
+    }
+    
+    public function isDir($file) {
+        return $this->storage->isDir($file);
+    }
+    
+    public function fileExists($file) {
+        return $this->storage->fileExists($file);
+    }
+    
+    public function getFile($file) {
+        return $this->storage->getFile($file);
+    }
+    
+    public function listDir($dir) {
+        return $this->storage->listDir($this->bucketName . '/' . $dir);
+    }
+    
+    public function unlink($file) {
+        return $this->storage->unlink($file);
+    }
+    
+    public function symlink($target, $link, $refresh = false) {
+        return $this->storage->symlink($target, $link, $refresh);
+    }
+    
+    public function getURLLastModified($url, $symlink) {
+        return $this->storage->getURLLastModified($url, $symlink);
+    }
+    
+    public function getAssetForLink($symlink) {
+        return $this->storage->getAssetForLink($this->bucketName, $symlink);
+    }
+    
+    public function sendFile($path) {
+        return $this->storage->sendFile($path);
     }
     
     /**
@@ -66,13 +105,13 @@ class binarypool_storage {
      * The file does not have to exist yet.
      */
     public function absolutizeAsset($file) {
-        return $this->assetStorage->absolutize($file);
+        return $this->storage->absolutize($file);
     }
     
     /**
      * Saves a file and returns a path to the asset file.
      */
-    public function save($type, $files) {
+    public function save($type, $files, $force=false) {
         $this->validateSaveParams($type, $files);
         
         $origFile = $files['_']['file'];
@@ -80,29 +119,53 @@ class binarypool_storage {
         
         $dir = $this->getDirectory($origFile);
         $assetFile = $dir . 'index.xml';
-        $originalFile = $this->saveOriginalFile($dir, $origFile, $origFilename);
-        $renditions = $this->saveRenditions($type, $dir, $origFile,
-            $files, $assetFile);
+        $assetObj = null;
+        if ($force === false && $this->storage->fileExists($assetFile)) {
+            $assetObj = $this->getAssetObject($assetFile);
+        }
         
-        return $this->createAssetFile($assetFile, $dir, $originalFile,
-            $renditions, $type);
+        $originalFile = null;
+        if ($assetObj === null || $assetObj->getOriginal() === null) {
+            $originalFile = $this->saveOriginalFile($dir, $origFile, $origFilename);
+        }
+        
+        $renditions = $this->saveRenditions($type, $dir, $origFile,
+            $files, $assetFile, $assetObj);
+        
+        return $this->createAssetFile($assetFile, $assetObj, $dir,
+            $originalFile, $renditions, $type);
+    }
+    
+    /**
+     * Adds a new callback to an existing asset file.
+     */
+    public function addCallback($asset, $callback) {
+        $callback = str_replace('{asset}', $asset, $callback);
+        
+        $assetObj = $this->getAssetObject($asset);
+        $assetObj->addCallback($callback);
+        $this->saveAsset($assetObj, $asset);
     }
 
-    private function createAssetFile($assetFile, $dir, $originalFile,
+    private function createAssetFile($assetFile, $assetObj, $dir, $originalFile,
             $renditions, $type) {
-        $assetFileAbs = $this->assetStorage->absolutize($assetFile);
-
         $asset = null;
-        if (file_exists($assetFileAbs)) {
-            // Load existing asset file
-            $asset = new binarypool_asset($assetFileAbs);
-        } else {
-            $asset = new binarypool_asset();
+        
+        if ($originalFile === null || $renditions === null) {
+            // Nothing to save, just writing an existing file
+            return $assetFile;
         }
-        // If the asset file and the target files point to different
-        // locations, then store the locations as absolute values in the
-        // asset file
-        $storeAbsolute = ($this->assetStorage->absolutize($assetFile) != $this->storage->absolutize($assetFile));
+        
+        if (!is_null($assetObj)) {
+            $asset = $assetObj;
+        } else if ($this->storage->isFile($assetFile)) {
+            // Load existing asset file
+            $asset = $this->getAssetObject($assetFile);
+        } else {
+            $asset = new binarypool_asset($this);
+        }
+        
+        $storeAbsolute = $this->storage->isAbsoluteStorage();
         $asset->setBasePath($dir, $storeAbsolute);
         $asset->setOriginal($this->storage->absolutize($originalFile));
         foreach ($renditions as $rendition => $filename) {
@@ -116,13 +179,8 @@ class binarypool_storage {
         $asset->setExpiry(time() + (intval($this->bucketConfig['ttl']) * 24 * 60 * 60));
         $asset->setType($type);
         
-        // Save
-        if (! file_exists(dirname($assetFileAbs))) {
-            mkdir(dirname($assetFileAbs), 0755, true);
-        }
-        file_put_contents($assetFileAbs, $asset->getXML());
-        
         // Done
+        $this->saveAsset($asset, $assetFile);
         return $assetFile;
     }
     
@@ -137,17 +195,22 @@ class binarypool_storage {
         }
     }
     
-    private function saveRenditions($type, $dir, $originalFile, $files, $assetFile) {
+    private function saveRenditions($type, $dir, $originalFile, $files, $assetFile, $assetObj) {
         return array_merge(
-            $this->generateRenditions($type, $dir, $originalFile, $files, $assetFile),
+            $this->generateRenditions($type, $dir, $originalFile, $files, $assetFile, $assetObj),
             $this->saveUploadedRenditions($dir, $files));
     }
     
-    private function generateRenditions($type, $dir, $originalFile, $files, $assetFile) {
+    private function generateRenditions($type, $dir, $originalFile, $files, $assetFile, $assetObj) {
+        $exclude = array_keys($files);
+        if ($assetObj !== null) {
+            $exclude = array_merge(array_keys($assetObj->getRenditions()));
+        }
+        
         $outputDir = $this->storage->getRenditionsDirectory($dir);
         $renditions = binarypool_render::render($type, $this->bucketName,
                 $originalFile, $outputDir,
-                array_keys($files),
+                $exclude,
                 $assetFile);
         return $this->storage->saveRenditions($renditions, $dir);
     }
@@ -192,13 +255,12 @@ class binarypool_storage {
      */
     public function delete($asset) {
         // Load asset from file
-        $assetObj = new binarypool_asset($this->assetStorage->absolutize($asset));
+        $assetObj = $this->getAssetObject($asset);
         $basepath = $assetObj->getBasePath();
         
         $date = date('Y/m/d');
         $trashDir = 'Trash/' . $date . '/' . $basepath;
         $this->storage->rename($basepath, $trashDir);
-        $this->assetStorage->rename($basepath, $trashDir);
     }
 
     /**
@@ -207,10 +269,9 @@ class binarypool_storage {
     public function getAssetBySha1($hash) {
         $directory = $this->bucketName . '/' . $this->hashMapper($hash) . '/';
         $file = $directory . 'index.xml';
-        if (! file_exists($this->assetStorage->absolutize($file))) {
+        if (! $this->storage->isFile($file)) {
             throw new binarypool_exception(115, 404, "File does not exist: $hash");
         }
-        
         return $file;
     }
     
@@ -225,6 +286,7 @@ class binarypool_storage {
         if ($filename == 'index.xml') {
             $filename = 'index-document.xml';
         }
+        $filename = preg_replace('/[^-a-zA-Z0-9.]+/', '_', $filename);
         
         $this->storage->save($file, $dir . $filename);
         return $dir . $filename;
@@ -241,5 +303,28 @@ class binarypool_storage {
             return new binarypool_storage_driver_file();
         }
     }
+    
+    /**
+     * Write the given asset into storage.
+     */
+    public function saveAsset($asset, $assetFile) {
+        $assetFileTmp = $this->getTempFile();
+        file_put_contents($assetFileTmp, $asset->getXML());
+        $this->storage->save($assetFileTmp, $assetFile);
+        unlink($assetFileTmp);
+    }
+    
+    /**
+     * Creates a new temporary file and returns the name to it.
+     */
+    private function getTempFile() {
+        return tempnam(sys_get_temp_dir(), 'storage');
+    }
+    
+    /**
+     * Return an asset object.
+     */
+    public function getAssetObject($path) {
+        return new binarypool_asset($this, $path);
+    }
 }
-?>

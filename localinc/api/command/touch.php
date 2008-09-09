@@ -16,15 +16,15 @@ class api_command_touch extends api_command_base {
     }
     
     protected function touch($bucket, $uri) {
+        $storage = new binarypool_storage($bucket);
         $assetFile = $uri;
-        if (!file_exists(binarypool_config::getRoot() . $uri)) { return false; }
         
-        $path = realpath(binarypool_config::getRoot() . $uri);
-        if (is_dir($path)) {
-            $path .= '/index.xml';
+        if (! $storage->isFile($assetFile)) {
             $assetFile .= '/index.xml';
+            if (! $storage->isFile($assetFile)) {
+                return false;
+            }
         }
-        if (!is_file($path)) { return false; }
         
         // Get TTL from request
         $buckets = binarypool_config::getBuckets();
@@ -38,10 +38,10 @@ class api_command_touch extends api_command_base {
         }
         
         // Set TTL
-        $oldAsset = new binarypool_asset($path);
-        $asset = new binarypool_asset($path);
+        $oldAsset = $storage->getAssetObject($assetFile);
+        $asset = $storage->getAssetObject($assetFile);
         $asset->setExpiry(time() + ($ttl * 24 * 60 * 60));
-        file_put_contents($path, $asset->getXML());
+        $storage->saveAsset($asset, $assetFile);
         
         // Update views
         binarypool_views::updated($bucket, $assetFile, $oldAsset);

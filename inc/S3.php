@@ -868,6 +868,7 @@ final class S3Request {
 		curl_setopt($curl, CURLOPT_WRITEFUNCTION, array(&$this, '__responseWriteCallback'));
 		curl_setopt($curl, CURLOPT_HEADERFUNCTION, array(&$this, '__responseHeaderCallback'));
 		curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($curl, CURLOPT_TIMEOUT, 60);
 
 		// Request types
 		switch ($this->verb) {
@@ -910,18 +911,25 @@ final class S3Request {
 
 		// Parse body into XML
 		if ($this->response->error === false && isset($this->response->headers['type']) &&
-		$this->response->headers['type'] == 'application/xml' && isset($this->response->body)) {
-			$this->response->body = simplexml_load_string($this->response->body);
-
+		        $this->response->headers['type'] == 'application/xml' && isset($this->response->body)) {
+		    $dom = new DOMDocument();
+		    $dom->loadXML($this->response->body);
+		    $xp = new DOMXPath($dom);
+		    $codeXp = $xp->query('/Error/Code');
+		    $messageXp = $xp->query('/Error/Message');
+		    $resourceXp = $xp->query('/Error/Resource');
+		    $code = $codeXp->length == 0 ? null : $codeXp->item(0)->nodeValue;
+		    $message = $messageXp->length == 0 ? null : $messageXp->item(0)->nodeValue;
+		    $resource = $resourceXp->length == 0 ? null : $resourceXp->item(0)->nodeValue;
+		    
 			// Grab S3 errors
 			if (!in_array($this->response->code, array(200, 204)) &&
-			isset($this->response->body->Code, $this->response->body->Message)) {
+			        !is_null($code) && !is_null($message)) {
 				$this->response->error = array(
-					'code' => (string)$this->response->body->Code,
-					'message' => (string)$this->response->body->Message
+					'code' => (string)$code,
+					'message' => (string)$message,
+					'resource' => (string)$resource,
 				);
-				if (isset($this->response->body->Resource))
-					$this->response->error['resource'] = (string)$this->response->body->Resource;
 				unset($this->response->body);
 			}
 		}

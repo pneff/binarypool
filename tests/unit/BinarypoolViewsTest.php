@@ -58,10 +58,11 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
      * to determine an expiry date.
      */
     function testExpireDateViewWithAssetInformation() {
-        $asset = new binarypool_asset(binarypool_config::getRoot() . $this->assetFile);
+        $storage = $this->getDummyStorage();
+        $asset = new binarypool_asset($storage, $this->assetFile);
         $asset->setExpiry(strtotime('+2 days'));
-        file_put_contents(binarypool_config::getRoot() . $this->assetFile, $asset->getXML());
-
+        $storage->saveAsset($asset, $this->assetFile);
+        
         // All there?
         binarypool_views::created('test', $this->assetFile, array());
         $date = date('Y/m/d', strtotime('+2 days'));
@@ -89,7 +90,7 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
             'Asset file does not exist in the expiration date view.');
 
         // Update
-        $asset = new binarypool_asset(binarypool_config::getRoot() . $this->assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $this->assetFile);
 
         // First view is kept around?
         binarypool_views::updated('test', $this->assetFile, $asset);
@@ -110,7 +111,7 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
         $date = date('Y/m/d', strtotime('+9 days'));
         $viewExpires9Days = self::$BUCKET . 'expiry/' . $date . '/' . $this->assetId;
 
-        $asset = new binarypool_asset(binarypool_config::getRoot() . $this->assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $this->assetFile);
         $asset->setExpiry(strtotime('+2 days'));
         file_put_contents(binarypool_config::getRoot() . $this->assetFile, $asset->getXML());
 
@@ -122,8 +123,8 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
             'Asset file does not exist in the first expiration date view.');
 
         // Update
-        $oldAsset = new binarypool_asset(binarypool_config::getRoot() . $this->assetFile);
-        $asset = new binarypool_asset(binarypool_config::getRoot() . $this->assetFile);
+        $oldAsset = new binarypool_asset($this->getDummyStorage(), $this->assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $this->assetFile);
         $asset->setExpiry(strtotime('+9 days'));
         file_put_contents(binarypool_config::getRoot() . $this->assetFile, $asset->getXML());
 

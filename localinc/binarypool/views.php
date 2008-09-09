@@ -24,7 +24,8 @@ class binarypool_views {
      * @param $metadata: e.g. URL if binary fetched from a url  
      */
     public static function created($bucket, $asset, $metadata = array()) {
-        $assetObj = new binarypool_asset(binarypool_config::getRoot() . $asset);
+        $storage = new binarypool_storage($bucket);
+        $assetObj = $storage->getAssetObject($asset);
         
         self::linkCreationDate($bucket, $assetObj);
         self::linkExpirationDate($bucket, $assetObj);
@@ -37,11 +38,12 @@ class binarypool_views {
      * binary and might delete old links.
      *
      * @param $bucket:      Bucket where the asset lies in.
-     * @param $asset:       Relative to a valid asset file.
+     * @param $asset:       Relative path to a valid asset file.
      * @param $oldAssetObj: The version of the asset file before saving.
      */
     public static function updated($bucket, $asset, $oldAssetObj) {
-        $assetObj = new binarypool_asset(binarypool_config::getRoot() . $asset);
+        $storage = new binarypool_storage($bucket);
+        $assetObj = $storage->getAssetObject($asset);
         
         self::linkExpirationDate($bucket, $assetObj, $oldAssetObj);
     }
@@ -53,11 +55,11 @@ class binarypool_views {
      */
     private static function linkCreationDate($bucket, $asset) {
         $dateDir = date('Y/m/d', $asset->getCreated());
-        $absDateDir = binarypool_config::getRoot() . $bucket . '/created/' . $dateDir;
-        
+        $fullDateDir = $bucket . '/created/' . $dateDir;
         $assetDir = '../../../../' . self::getCleanedBasepath($asset);
-        $symlink = $absDateDir . '/' . $asset->getHash();
-        self::createLink($assetDir, $symlink);
+        $symlink = $fullDateDir . '/' . $asset->getHash();
+        
+        self::createLink($bucket, $assetDir, $symlink);
     }
     
     /**
@@ -76,17 +78,18 @@ class binarypool_views {
         // Delete old link
         if (!is_null($oldasset)) {
             $dateDir = date('Y/m/d', $oldasset->getExpiry());
-            $absDateDir = binarypool_config::getRoot() . $bucket . '/expiry/' . $dateDir;
-            $symlink = $absDateDir . '/' . $asset->getHash();
-            unlink($symlink);
+            $fullDateDir = $bucket . '/expiry/' . $dateDir;
+            $symlink = $fullDateDir . '/' . $asset->getHash();
+            $storage = new binarypool_storage($bucket);
+            $storage->unlink($symlink);
         }
         
         $dateDir = date('Y/m/d', $asset->getExpiry());
-        $absDateDir = binarypool_config::getRoot() . $bucket . '/expiry/' . $dateDir;
+        $fullDateDir = $bucket . '/expiry/' . $dateDir;
         
         $assetDir = '../../../../' . self::getCleanedBasepath($asset);
-        $symlink = $absDateDir . '/' . $asset->getHash();
-        self::createLink($assetDir, $symlink);
+        $symlink = $fullDateDir . '/' . $asset->getHash();
+        self::createLink($bucket, $assetDir, $symlink);
     }
     
     /**
@@ -109,7 +112,7 @@ class binarypool_views {
             $refresh = True;
         }
                 
-        self::createLink($assetDir, $symlink, $refresh);
+        self::createLink($bucket, $assetDir, $symlink, $refresh);
     }
     
     /**
@@ -122,7 +125,7 @@ class binarypool_views {
      */
     public static function flagBadUrl($bucket, $url) {
         $symlink = self::getDownloadedViewPath($bucket, $url);
-        self::createLink('/dev/null', $symlink);
+        self::createLink($bucket, '/dev/null', $symlink);
     }
     
     /**
@@ -141,8 +144,7 @@ class binarypool_views {
         
         $urlhash = sha1($url);
         
-        return sprintf( "%s%s/downloaded/%s/%s",
-                        binarypool_config::getRoot(),
+        return sprintf( "%s/downloaded/%s/%s",
                         $bucket,
                         substr($urlhash, 0, 2),
                         $urlhash
@@ -166,24 +168,8 @@ class binarypool_views {
      * Creates a symbolic link, also creating all parent directories
      * if necessary.
      */
-    private static function createLink($target, $link, $refresh = false) {
-        if (! file_exists(dirname($link))) {
-            mkdir(dirname($link), 0755, true);
-        }
-
-        if (! file_exists($link)) {
-            
-            symlink($target, $link);
-            
-        } else if ( $refresh ) {
-            
-            // "touch" the symlink - use specific to downloaded view where
-            // we only want to revalidate older cache entries
-            $tmplink = sprintf("/tmp/%s%s", sha1($link), microtime(True));
-            symlink($target, $tmplink);
-            rename($tmplink, $link);
-            
-        }
+    private static function createLink($bucket, $target, $link, $refresh = false) {
+        $storage = new binarypool_storage($bucket);
+        $storage->symlink($target, $link, $refresh);
     }
 }
-?>

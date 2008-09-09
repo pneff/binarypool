@@ -11,7 +11,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      */
     function testAssetWithoutRenditions() {
         // Create asset file
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $asset->setBasePath('test/somehashhere');
         $asset->setOriginal($this->testfile);
         $xml = $asset->getXML();
@@ -53,7 +53,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $this->assertEqual($out, $resizedFile . '.jpg', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
         
         // Create asset file
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $asset->setBasePath('test/somehashhere');
         $asset->setOriginal($basepath . 'vw_golf.jpg');
         $asset->setRendition('resultlist', $out);
@@ -111,16 +111,36 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $this->testAssetWithRendition90x90();
         $created = time();
         
-        $basepath = self::$BUCKET . 'somehashhere/';
+        $basepath = 'test/somehashhere/';
+        $basepathAbs = binarypool_config::getRoot() . $basepath;
         $assetFile = $basepath . 'index.xml';
         
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $this->assertEqual('test/somehashhere/', $asset->getBasePath());
-        $this->assertEqual($basepath . 'vw_golf.jpg', $asset->getOriginal());
-        $this->assertEqual($basepath . 'resultlist.jpg', $asset->getRendition('resultlist'));
-        $this->assertEqual(array('resultlist' => $basepath . 'resultlist.jpg'), $asset->getRenditions());
+        $this->assertEqual($basepathAbs . 'vw_golf.jpg', $asset->getOriginal());
+        $this->assertEqual($basepathAbs . 'resultlist.jpg', $asset->getRendition('resultlist'));
+        $this->assertEqual(array('resultlist' => $basepathAbs . 'resultlist.jpg'), $asset->getRenditions());
         $this->assertEqual('096dfa489bc3f21df56eded2143843f135ae967e', $asset->getHash());
         $this->assertWithinMargin($created, $asset->getCreated(), 10);
+        $this->assertEqual('IMAGE', $asset->getType());
+    }
+    
+    /**
+     * Load the asset file from storage.
+     */
+    function testLoadAssetFileFromStorage() {
+        $this->testAssetWithRendition90x90();
+        $storage = new binarypool_storage('test');
+        $basepath = 'test/somehashhere/';
+        $basepathAbs = binarypool_config::getRoot() . $basepath;
+        
+        $asset = $storage->getAssetObject($basepath . 'index.xml');
+        
+        $this->assertEqual('test/somehashhere/', $asset->getBasePath());
+        $this->assertEqual($basepathAbs . 'vw_golf.jpg', $asset->getOriginal());
+        $this->assertEqual($basepathAbs . 'resultlist.jpg', $asset->getRendition('resultlist'));
+        $this->assertEqual(array('resultlist' => $basepathAbs . 'resultlist.jpg'), $asset->getRenditions());
+        $this->assertEqual('096dfa489bc3f21df56eded2143843f135ae967e', $asset->getHash());
     }
 
     /**
@@ -130,14 +150,14 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
     function testRecreateAssetFile() {
         $this->testAssetWithRendition90x90();
         
-        $basepath = self::$BUCKET . 'somehashhere/';
+        $basepath = 'test/somehashhere/';
         $assetFile = $basepath . 'index.xml';
         
         // Get old XML DOM
-        $oldDom = DOMDocument::load($assetFile);
+        $oldDom = DOMDocument::load(binarypool_config::getRoot() . $assetFile);
         
         // Get new XML DOM
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $xml = $asset->getXML();
         $newDom = DOMDocument::loadXML($xml);
         
@@ -150,10 +170,10 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      */
     function testAssetfileCallback() {
         $this->testAssetWithRendition90x90();
-        $assetFile = self::$BUCKET . 'somehashhere/index.xml';
+        $assetFile = 'test/somehashhere/index.xml';
         
         // Load and check that no callbacks are around
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $this->assertEqual($asset->getCallbacks(), array());
         
         // Add a callback and check it's around
@@ -172,7 +192,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      * can't be added twice.
      */
     function testAssetfileDuplicateCallback() {
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $this->assertEqual($asset->getCallbacks(), array());
         
         // Add a callback and check it's around
@@ -189,19 +209,19 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      */
     function testAssetfileCallbackLoadFile() {
         $this->testAssetWithRendition90x90();
-        $assetFile = self::$BUCKET . 'somehashhere/index.xml';
+        $assetFile = 'test/somehashhere/index.xml';
         
         // Add callbacks
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $asset->addCallback('http://testing_this.local.ch/');
         $asset->addCallback('http://testing_this.local.ch/2');
         
         // Save
         $xml = $asset->getXML();
-        file_put_contents($assetFile, $xml);
+        file_put_contents(binarypool_config::getRoot() . $assetFile, $xml);
 
         // Check that callbacks are loaded again
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $this->assertEqual($asset->getCallbacks(), array(
             'http://testing_this.local.ch/',
             'http://testing_this.local.ch/2'
@@ -213,19 +233,19 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      */
     function testAssetfileCallbackAddToExisting() {
         $this->testAssetfileCallbackLoadFile();
-        $assetFile = self::$BUCKET . 'somehashhere/index.xml';
+        $assetFile = 'test/somehashhere/index.xml';
         
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $this->assertEqual(2, count($asset->getCallbacks()));
         $asset->addCallback('http://testing_this.local.ch/falsetest');
         $this->assertEqual(3, count($asset->getCallbacks()));
         
         // Save
         $xml = $asset->getXML();
-        file_put_contents($assetFile, $xml);
+        file_put_contents(binarypool_config::getRoot() . $assetFile, $xml);
 
         // Check that callbacks are loaded again
-        $asset = new binarypool_asset($assetFile);
+        $asset = new binarypool_asset($this->getDummyStorage(), $assetFile);
         $this->assertEqual($asset->getCallbacks(), array(
             'http://testing_this.local.ch/',
             'http://testing_this.local.ch/2',
@@ -237,7 +257,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      * Create an asset XML with an absolute base path.
      */
     function testAssetWithAbsoluteBasePath() {
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $asset->setBasePath('http://bin.staticlocal.ch/', true);
         $asset->setOriginal('http://bin.staticlocal.ch/vw_golf.jpg');
         $xml = $asset->getXML();
@@ -257,13 +277,14 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
      * Create an asset XML with an absolute base path and reload it.
      */
     function testAssetPersistanceWithAbsoluteBasePath() {
-        $basepath = self::$BUCKET . 'somehashhere/';
-        mkdir($basepath, 0755, true);
+        $basepath = 'test/somehashhere/';
+        $absBasepath = binarypool_config::getRoot() . $basepath;
+        mkdir($absBasepath, 0755, true);
         $asset = $this->testAssetWithAbsoluteBasePath();
-        file_put_contents($basepath . 'index.xml', $asset->getXML());
+        file_put_contents($absBasepath . 'index.xml', $asset->getXML());
         
         // Load XML from FS
-        $asset = new binarypool_asset($basepath . 'index.xml');
+        $asset = new binarypool_asset($this->getDummyStorage(), $basepath . 'index.xml');
         $xml = $asset->getXML();
         $dom = DOMDocument::loadXML($xml);
         $xp = new DOMXPath($dom);
@@ -279,7 +300,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
 
     function testPDFAssetWithoutRenditions() {
         // Create asset file
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $asset->setBasePath('test/somehashhere');
         $asset->setOriginal(realpath(dirname(__FILE__).'/../res/emil_frey_logo_2.pdf'));
         $xml = $asset->getXML();

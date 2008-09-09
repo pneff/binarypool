@@ -5,11 +5,15 @@ require_once(dirname(__FILE__).'/../../binarypool/render.php');
 
 class api_command_serve extends api_command_base {
     protected function execute() {
+        $storage = new binarypool_storage($this->bucket);
         $path = $this->getPath();
-        $mime = binarypool_mime::getMimeType($path);
+        $mime = binarypool_mime::getMimeType($storage->absolutize($path));
         $this->response->setHeader('Content-Type', $mime);
-        readfile($path);
+        
+        // Turn off output buffering, so big files don't cause problems
+        $this->response->setContentLengthOutput(false);
         $this->response->send();
+        $storage->sendFile($path);
         $this->ignoreView = true;
     }
     
@@ -17,24 +21,24 @@ class api_command_serve extends api_command_base {
      * Get the path from the URI and implement access control.
      */
     protected function getPath() {
-        $uri = $this->request->getPath();
+        $uri = $this->getUri();
+        $storage = new binarypool_storage($this->bucket);
         
         // Access control
-        if (!file_exists(binarypool_config::getRoot() . $uri)) {
+        if (!$storage->fileExists($uri)) {
             throw new binarypool_exception(115, 404, "File not found: " . $uri);
         }
-        $path = realpath(binarypool_config::getRoot() . $uri);
-        if (is_dir($path)) {
-            $path .= '/index.xml';
+        if ($storage->isDir($uri)) {
+            $uri .= '/index.xml';
         }
-        if (!is_file($path)) {
+        if (!$storage->isFile($uri)) {
             throw new binarypool_exception(115, 404, "File not found: " . $uri);
-        }
-        if (strpos($path, binarypool_config::getRoot()) !== 0) {
-            // Apache should protect us against this, but you never know.
-            throw new binarypool_exception(108, 403, "Access forbidden: $uri");
         }
         
-        return $path;
+        return ltrim($uri, '/');
+    }
+    
+    protected function getUri() {
+        return $this->request->getPath();
     }
 }

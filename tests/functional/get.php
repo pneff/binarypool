@@ -20,7 +20,7 @@ class test_func_get extends test_base_functional {
     function testInvalidGet() {
         $this->get('/something/def');
         $this->assertEqual(api_response::getInstance()->getCode(), 404);
-        $this->assertText('/error/code', '115');
-        $this->assertText('/error/msg', 'File not found: /something/def');
+        $this->assertText('/error/code', '100');
+        $this->assertText('/error/msg', 'Bucket not defined: something');
     }
 }

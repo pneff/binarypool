@@ -76,5 +76,8 @@ abstract class BinarypoolTestCase extends UnitTestCase {
             unlink($path);
         }
     }
+    
+    protected function getDummyStorage() {
+        return new binarypool_storage('test');
+    }
 }
-?>

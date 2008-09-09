@@ -14,7 +14,7 @@ class BinarypoolExpiryTest extends BinarypoolTestCase {
      */
     function createAsset($callbacks = array(), $age = 30) {
         // Create asset file
-        $asset = new binarypool_asset();
+        $asset = new binarypool_asset($this->getDummyStorage());
         $asset->setBasePath('test/somehashhere');
         $asset->setOriginal($this->testfile);
         $asset->setExpiry(time() - ($age * 24 * 60 * 60));

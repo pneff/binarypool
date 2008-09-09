@@ -87,7 +87,108 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
             $this->deltree($sourceAbs);
         }
     }
-
+    
+    public function fileExists($file) {
+        return file_exists($this->absolutize($file));
+    }
+    
+    public function isFile($file) {
+        return is_file($this->absolutize($file));
+    }
+    
+    public function isDir($file) {
+        return is_dir($this->absolutize($file));
+    }
+    
+    public function getFile($file) {
+        return file_get_contents($this->absolutize($file));
+    }
+    
+    public function sendFile($file) {
+        readfile($this->absolutize($file));
+    }
+    
+    public function isAbsoluteStorage() {
+        return false;
+    }
+    
+    public function getURLLastModified($url, $symlink) {
+        if (!$this->fileExists($symlink)) {
+            return array('time' => 0, 'revalidate' => true, 'cache_age' => 0);
+        }
+        
+        $symlinkAbs = $this->absolutize($symlink);
+        $stat = lstat($symlinkAbs);
+        $now = time();
+        
+        if (readlink($symlinkAbs) == '/dev/null') {
+            $failed_time = $now - $stat['mtime'];
+            if ($failed_time > binarypool_config::getBadUrlExpiry()) {
+                unlink($symlink);
+                return array('time' => 0, 'revalidate' => true, 'cache_age' => $failed_time);
+            }
+            
+            $failed_nextfetch = ($stat['mtime'] + binarypool_config::getBadUrlExpiry()) - $now;
+            throw new binarypool_exception(122, 400, "File download failed $failed_time seconds ago. Re-fetching allowed in next time in $failed_nextfetch seconds: $url");
+        }
+        
+        $cache_age = $now - $stat['mtime'];
+        $revalidate = false;
+        if ($cache_age > binarypool_config::getCacheRevalidate()) {
+            $revalidate = true;
+        }
+        
+        return array(
+            'time' => filemtime($symlinkAbs),
+            'revalidate' => $revalidate,
+            'cache_age' => $cache_age); 
+    }
+    
+    public function listDir($dir) {
+        $files = array();
+        $absDir = $this->absolutize($dir);
+        if (is_dir($absDir)) {
+            if ($dirhandle = opendir($absDir)) {
+                while (($file = readdir($dirhandle)) !== false) {
+                    if ($file != '.' && $file != '..') {
+                        $assetFile = $dir . '/' . $file . '/index.xml';
+                        if ($this->isFile($assetFile)) {
+                            $asset = new binarypool_asset($this, $assetFile);
+                            array_push($files, $asset->getBasePath() . 'index.xml');
+                        }
+                    }
+                }
+                closedir($dirhandle);
+            }
+        }
+        return $files;
+    }
+    
+    public function unlink($file) {
+        unlink($this->absolutize($file));
+    }
+    
+    public function symlink($target, $link, $refresh = false) {
+        $link = $this->absolutize($link);
+        
+        if (! file_exists(dirname($link))) {
+            mkdir(dirname($link), 0755, true);
+        }
+        
+        if (! file_exists($link)) {
+            symlink($target, $link);
+        } else if ($refresh) {
+            // "touch" the symlink
+            $tmplink = sprintf("/tmp/%s%s", sha1($link), microtime(True));
+            symlink($target, $tmplink);
+            rename($tmplink, $link);
+        }
+    }
+    
+    public function getAssetForLink($bucket, $symlink) {
+        return str_replace('../..', $bucket, readlink($this->absolutize($symlink))). '/index.xml';
+    }
+    
     /**
      * Removes a directory recursively.
      */

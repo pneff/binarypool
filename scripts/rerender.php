@@ -30,16 +30,17 @@ $processed = 0;
 $storage = null;
 function walk_callback($dir) {
     global $processed, $storage, $max;
-    
-    if (file_exists($dir . 'index.xml')) {
+
+    if ($storage->isFile($dir . 'index.xml')) {
         if ($max > 0) {
             echo $dir . "index.xml\n";
         }
         
-        $asset = new binarypool_asset($dir . 'index.xml');
+        $asset = $storage->getAssetObject($dir . 'index.xml');
         $processed++;
         $storage->save($asset->getType(),
-            array('_' => array('file' => $asset->getOriginal())));
+            array('_' => array('file' => $asset->getOriginal())),
+            true);
     }
     
     if ($processed >= $max) {
@@ -49,6 +50,7 @@ function walk_callback($dir) {
 }
 
 function walk_dir($root, $callback, $exclude = array()) {
+    $fsroot = binarypool_config::getRoot();
     $root = rtrim($root, '/') . '/';
     $queue = array($root);
     foreach ( $exclude as &$path ) {
@@ -56,7 +58,8 @@ function walk_dir($root, $callback, $exclude = array()) {
     }
     
     while ($base = array_shift($queue)) {
-        $callback($base);
+        $relative = substr($base, strlen($fsroot));
+        $callback($relative);
         
         if (($handle = opendir($base))) {
             while (($child = readdir($handle)) !== FALSE) {

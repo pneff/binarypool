@@ -2,15 +2,22 @@
 require_once(dirname(__FILE__).'/../../binarypool/asset.php');
 require_once(dirname(__FILE__).'/../../binarypool/exception.php');
 require_once(dirname(__FILE__).'/../../binarypool/storage.php');
-require_once(dirname(__FILE__).'/../../binarypool/storage_driver_file.php');
 require_once(dirname(__FILE__).'/../../binarypool/views.php');
 require_once(dirname(__FILE__).'/../../binarypool/config.php');
 
 class api_command_create extends api_command_base {
     private static $UPLOAD_TYPES = array('IMAGE', 'MOVIE', 'XML');
+    // Files that need to be cleaned up in the end.
+    private $tmpfiles = array();
     
     protected function execute() {
-        $this->upload($this->bucket);
+        try {
+            $this->upload($this->bucket);
+        } catch (Exception $e) {
+            $this->cleanup($this->tmpfiles);
+            throw $e;
+        }
+        $this->cleanup($this->tmpfiles);
     }
     
     protected function upload($bucket) {
@@ -21,41 +28,31 @@ class api_command_create extends api_command_base {
         $callback = $this->request->getParam('Callback', '');
         $files = $this->getFiles();
         $url = $this->request->getParam('URL');
-        $metadata = array();
-        $metadata['URL'] = $url;
+        
+        $storage = new binarypool_storage($bucket);
         
         // 304 not modified
-        if ( 0 == count($files) && !empty($url) ) {
-            
+        if (0 == count($files) && !empty($url)) {
             $symlink = binarypool_views::getDownloadedViewPath($bucket, $url);
-            $asset = str_replace('../..', $bucket, readlink($symlink)). '/index.xml';
+            $asset = $storage->getAssetForLink($symlink);
             $this->log->info("Unmodified file %s", $asset);
-            
         } else {
-        
             // Save file
-            $storage = new binarypool_storage($bucket);
             $asset = $storage->save($type, $files);
             $this->log->info("Created file %s", $asset);
-        
         }
-        
-        $asset_store = new binarypool_storage_driver_file();
-        $absStoragePath = $asset_store->absolutize($asset);
         
         foreach ($files as $rendition => $file) {
             unlink($file['file']);
         }
         
-        binarypool_views::created($bucket, $asset, $metadata);
-        
-        // Add callback
-        if ($callback != '') {
-            $callback = str_replace('{asset}', $asset, $callback);
-            $assetObj = new binarypool_asset($absStoragePath);
-            $assetObj->addCallback($callback);
-            file_put_contents($absStoragePath, $assetObj->getXML());
+        if ($callback !== '') {
+            $storage->addCallback($asset, $callback);
         }
+        
+        $metadata = array();
+        $metadata['URL'] = $url;
+        binarypool_views::created($bucket, $asset, $metadata);
         
         $this->setResponseCode(201);
         $this->response->setHeader('Location', $asset);
@@ -63,7 +60,6 @@ class api_command_create extends api_command_base {
         
         $xml = "<status method='post'><asset>" . htmlspecialchars($asset) . "</asset></status>";
         array_push($this->data, new api_model_xml($xml));
-        array_push($this->data, new api_model_file($absStoragePath));
     }
 
     protected function checkInput() {
@@ -127,12 +123,13 @@ class api_command_create extends api_command_base {
         $url = $this->request->getParam('URL');
         $this->log->debug("Downloading file: %s", $url);
         
-        $httpc = new binarypool_httpclient();
         $lastmodified = self::lastModified($this->bucket, $url);
+        
         $result = array('code' => 0, 'headers' => array(), 'body' => ''); 
         $retries = 3;
         
-        if ( $lastmodified['revalidate'] ) {
+        if ($lastmodified['revalidate']) {
+            $httpc = new binarypool_httpclient();
             while ( $retries ) {
                 try {
                     $result = $httpc->get($url, $lastmodified['time']);
@@ -172,6 +169,7 @@ class api_command_create extends api_command_base {
         if ($file == '' || $file === FALSE) {
             throw new binarypool_exception(104, 500, "Could not create temporary file");
         }
+        array_push($this->tmpfiles, $file);
         
         file_put_contents($file, $result['body']);
         
@@ -197,42 +195,9 @@ class api_command_create extends api_command_base {
      * @return array(time => int Unix timestamp (0 means not found), revalidate => (true|false), cache_age => int) 
      */
     protected static function getURLLastModified($bucket, $url) {
+        $storage = new binarypool_storage($bucket);
         $symlink = binarypool_views::getDownloadedViewPath($bucket, $url);
-        
-        // Check the link target exists - filemtime would raise a PHP
-        // WARNING if not exists
-        if ( file_exists($symlink) ) {
-            
-            $stat = lstat($symlink);
-            $now = time();
-            
-            if ( readlink($symlink) == '/dev/null' ) {
-                $failed_time = $now - $stat['mtime'];
-                
-                if ( $failed_time > binarypool_config::getBadUrlExpiry() ) {
-                    unlink($symlink);
-                    return array('time'=>0, 'revalidate'=> True, 'cache_age' => $failed_time);
-                }
-                
-                $failed_nextfetch = ($stat['mtime'] + binarypool_config::getBadUrlExpiry()) - $now;
-                throw new binarypool_exception( 122, 400, "File download failed $failed_time seconds ago. Re-fetching allowed in next time in $failed_nextfetch seconds: $url");
-                
-            }
-            
-            $cache_age = $now - $stat['mtime'];
-            $revalidate = False;
-            if ( $cache_age > binarypool_config::getCacheRevalidate() ) {
-                $revalidate = True; 
-            }
-            
-            return array(
-                'time'=>filemtime($symlink),
-                'revalidate' => $revalidate,
-                'cache_age' => $cache_age
-                ); 
-        }
-        
-        return array('time'=>0, 'revalidate'=> True, 'cache_age' => 0);
+        return $storage->getURLLastModified($url, $symlink);
     }
     
     /**
@@ -246,5 +211,16 @@ class api_command_create extends api_command_base {
             $modified[$bucket.$url] = self::getURLLastModified($bucket, $url); 
         }
         return $modified[$bucket.$url];
+    }
+    
+    /**
+     * Removes the temporary files created by this command.
+     */
+    protected function cleanup($files) {
+        foreach ($files as $file) {
+            if (file_exists($file)) {
+                unlink($file);
+            }
+        }
     }
 }

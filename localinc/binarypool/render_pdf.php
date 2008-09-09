@@ -31,7 +31,6 @@ class binarypool_render_pdf extends binarypool_render_base {
         
         $log = new api_log();
         $log->debug("Rendering PDF with command: $cmd");
-        $out = shell_exec($cmd);
-        $log->debug("Command output was: $out");
+        shell_exec($cmd);
     }
 }

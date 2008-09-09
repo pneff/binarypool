@@ -6,6 +6,11 @@ class binarypool_mime {
      * @param $file: A file path or URL.
      */
     public static function getMimeType($file) {
+        $fproxy = new binarypool_fileobject($file);
+        if (is_null($fproxy->file)) {
+            return null;
+        }
+        
         $strategies = array(
             'Hardcoded',
             'Finfo',
@@ -15,7 +20,7 @@ class binarypool_mime {
         );
         
         foreach ($strategies as $strategy) {
-            $mime = call_user_func('binarypool_mime::getMimeTypeWith' . $strategy, $file);
+            $mime = call_user_func('binarypool_mime::getMimeTypeWith' . $strategy, $fproxy->file);
             if (!is_null($mime)) {
                 return $mime;
             }
@@ -78,12 +83,16 @@ class binarypool_mime {
     /**
      * Returns the size of the image.
      */
-    public function getImageSize($file, $mime = null) {
+    public function getImageSize($file, $mime = null, $type = null) {
         if (is_null($mime)) {
             $mime = self::getMimeType($file);
         }
+        if (is_null($type)) {
+            $type = binarypool_render::getType($mime);
+        }
         
-        if ($mime == 'application/pdf' or $mime == 'image/eps') {
+        if ($mime == 'application/pdf' or $mime == 'image/eps'
+                    or $mime == 'application/postscript') {
             // Try to get size from external pdfconverter utility
             $cmd = binarypool_config::getUtilityPath('pdfconverter');
             if (!is_null($cmd)) {
@@ -101,12 +110,16 @@ class binarypool_mime {
             }
         }
         
-        $size = getimagesize($file);
-        return array(
-            'width' => intval($size[0]),
-            'height' => intval($size[1]),
-            'unit' => 'px',
-        );
+        if ($type == 'IMAGE' || $type == 'MOVIE') {
+            $size = getimagesize($file);
+            return array(
+                'width' => intval($size[0]),
+                'height' => intval($size[1]),
+                'unit' => 'px',
+            );
+        } else {
+            return array('width' => null, 'height' => null, 'unit' => null);
+        }
     }
     
     /**

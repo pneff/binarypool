@@ -13,8 +13,8 @@ class binarypool_expiry {
      * Checks if the asset file is an expired resource.
      */
     public static function isExpired($bucket, $asset) {
-        $storage = new binarypool_storage_driver_file();
-        $obj = new binarypool_asset($storage->absolutize($asset));
+        $storage = new binarypool_storage($bucket);
+        $obj = $storage->getAssetObject($asset);
         
         if ($obj->getExpiry() > time()) {
             // Item expires in the future

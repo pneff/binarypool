@@ -15,22 +15,10 @@ class binarypool_fileinfo {
             return self::$fileinfoCache[$file];
         }
         
-        if (!is_file($file)) {
-            // Input may be an URL, try to fetch it into a local file.
-            $tmpfile = tempnam(sys_get_temp_dir(), 'fileinfo');
-            file_put_contents($tmpfile, file_get_contents($file));
-            if (!is_file($tmpfile)) {
-                return array('mime' => '', 'size' => 0);
-            }
-            
-            $info = self::getFileinfo($tmpfile);
-            unlink($tmpfile);
-            return $info;
-        }
-        
-        $mime = binarypool_mime::getMimeType($file);
-        $size = intval(filesize($file));
-        $sha1 = sha1_file($file);
+        $fproxy = new binarypool_fileobject($file);
+        $mime = binarypool_mime::getMimeType($fproxy->file);
+        $size = intval(filesize($fproxy->file));
+        $sha1 = sha1_file($fproxy->file);
         
         $info = array('mime' => $mime, 'size' => $size, 'hash' => $sha1);
         self::$fileinfoCache[$file] = $info;

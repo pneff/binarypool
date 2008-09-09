@@ -13,10 +13,12 @@ class binarypool_asset {
      * Creates a new asset file in memory or loads the referenced
      * asset file and puts the content into the data structures.
      *
-     * @param $file: Path to an existing asset file. Null to create
-     *               a new asset file.
+     * @param $storage: Storage class used to get the file.
+     * @param $file: Relative path of the file inside the storage.
+     *               null to create a new asset.
      */
-    public function __construct($file = null) {
+    public function __construct($storage, $file = null) {
+        $this->storage = $storage;
         if (is_null($file)) {
             $this->original = null;
             $this->hash = null;
@@ -27,16 +29,15 @@ class binarypool_asset {
             $this->created = time();
             $this->expiry = 0;
             $this->type = null;
-        } else if (!file_exists($file) || !is_file($file)) {
+        } else if (!$storage->isFile($file)) {
             throw new binarypool_exception(112, 500, 'Asset file does not exist: ' . $file);
-        }  else {
+        } else {
             $this->load($file);
         }
     }
     
     public function setOriginal($file) {
         $this->original = $file;
-        
         $info = binarypool_fileinfo::getFileinfo($file);
         $this->hash = $info['hash'];
     }
@@ -200,13 +201,11 @@ class binarypool_asset {
      * @param $rendition: Rendition name. null if this is the original.
      */
     private function getItem($file, $rendition) {
-        if (!$this->locationAbsolute && !file_exists($file)) {
-            // When location is absolute we can't check the location.
-            // Those might be the cases when we load from the network.
+        $fproxy = new binarypool_fileobject($file);
+        if (is_null($fproxy->file)) {
             throw new binarypool_exception(102, 404, "Referenced file in asset does not exist: $file");
         }
-        
-        $info = binarypool_mime::getImageSize($file);
+
         $fileinfo = binarypool_fileinfo::getFileinfo($file);
         $mime = $fileinfo['mime'];
         $size = $fileinfo['size'];
@@ -214,6 +213,7 @@ class binarypool_asset {
         $type = is_null($this->type) ?
             binarypool_render::getType($mime) :
             $this->type;
+        $info = binarypool_mime::getImageSize($file, $mime, $type);
         $isRendition = is_null($rendition) ? 'false' : 'true';
         $isLandscape = ($info['width'] > $info['height']) ? 'true' : 'false';
         
@@ -255,7 +255,7 @@ class binarypool_asset {
      */
     private function load($file) {
         // Load document into RAM, do checks
-        $dom = DOMDocument::load($file);
+        $dom = DOMDocument::loadXML($this->storage->getFile($file));
         if (is_null($dom)) {
             throw new binarypool_exception(113, 500, "Invalid asset file: $file");
         }
@@ -299,12 +299,15 @@ class binarypool_asset {
             if (! $this->locationAbsolute) {
                 $renditionLocation = substr($renditionLocation, strrpos($renditionLocation, '/'));
                 $renditionLocation = $assetDirectory . $renditionLocation;
+                $renditionLocationAbs = $this->storage->absolutize($renditionLocation);
+            } else {
+                $renditionLocationAbs = $renditionLocation;
             }
             
             $hashNodes = $xp->query('hash', $node);
             $hash = '';
             if ($hashNodes->length == 0) {
-                $fileinfo = binarypool_fileinfo::getFileinfo($renditionLocation);
+                $fileinfo = binarypool_fileinfo::getFileinfo($renditionLocationAbs);
                 $hash = $fileinfo['hash'];
             } else {
                 $hash = $hashNodes->item(0)->nodeValue;
@@ -315,14 +318,13 @@ class binarypool_asset {
                 'size' => intval($xp->query('size', $node)->item(0)->nodeValue),
                 'hash' => $hash,
             );
-            binarypool_fileinfo::setCache($renditionLocation, $fileinfo);
+            binarypool_fileinfo::setCache($renditionLocationAbs, $fileinfo);
             
             if ($isOriginal) {
-                $this->setOriginal($renditionLocation);
+                $this->setOriginal($renditionLocationAbs);
                 $this->type = $node->getAttribute('type');
             } else {
-                $this->setRendition($renditionName, $renditionLocation);
-                $this->type = null;
+                $this->setRendition($renditionName, $renditionLocationAbs);
             }
         }
     }

@@ -12,6 +12,10 @@ class S3_Wrapper {
         S3::setAuth($accessKey, $secretKey);
     }
     
+    public function putObject($input, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = array(), $contentType = null) {
+        return S3::putObject($input, $bucket, $uri, $acl, $metaHeaders, $contentType);
+    }
+    
     public function putObjectFile($file, $bucket, $uri, $acl = S3::ACL_PRIVATE, $metaHeaders = array(), $contentType = null) {
         return S3::putObjectFile($file, $bucket, $uri, $acl, $metaHeaders, $contentType);
     }
@@ -30,5 +34,9 @@ class S3_Wrapper {
 
     public function deleteObject($bucket = '', $uri = '') {
         return S3::deleteObject($bucket, $uri);
+    }
+    
+    public function getObject($bucket = '', $uri = '', $saveTo = false) {
+        return S3::getObject($bucket, $uri, $saveTo);
     }
 }

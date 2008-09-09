@@ -70,8 +70,7 @@ class binarypool_render_image extends binarypool_render_base {
         
         $log = new api_log();
         $log->debug("Resizing image using command: $cmd");
-        $out = shell_exec($cmd);
-        $log->debug("Command output was: $out");
+        shell_exec($cmd);
     }
     
     /**

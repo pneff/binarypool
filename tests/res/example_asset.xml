@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<registry version="3.0">
+    <created>1219225995</created>
+    <expiry>1234777995</expiry>
+    <basepath>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/</basepath>
+    <callback>http://extapi.local.ch/internal/imageupload/is-asset-in-use/?asset=market/f3/f3584d8f3729f7a91133648483068e73f27447b9/index.xml&amp;type=CLASSIFIED</callback>
+    <items>
+        <item type="IMAGE" isRendition="false">
+            <webobject isVisual="true" isAudioOnly="false" unit="px">
+                <objectWidth>1600</objectWidth>
+                <objectHeight>1200</objectHeight>
+            </webobject>
+            <imageinfo isLandscape="true" unit="px">
+                <width>1600</width>
+                <height>1200</height>
+            </imageinfo>
+            <rendition/>
+            <location>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/img_0042.jpg</location>
+            <importsource/>
+            <mimetype>image/jpeg</mimetype>
+            <size>303030</size>
+            <hash>f3584d8f3729f7a91133648483068e73f27447b9</hash>
+        </item>
+        <item type="IMAGE" isRendition="true">
+            <webobject isVisual="true" isAudioOnly="false" unit="px">
+                <objectWidth>67</objectWidth>
+                <objectHeight>50</objectHeight>
+            </webobject>
+            <imageinfo isLandscape="true" unit="px">
+                <width>67</width>
+                <height>50</height>
+            </imageinfo>
+            <rendition>resultlist</rendition>
+            <location>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/resultlist.jpg</location>
+            <importsource/>
+            <mimetype>image/jpeg</mimetype>
+            <size>7372</size>
+            <hash>21127a13f37a32bb1dc04fea26e5d874098e1d64</hash>
+        </item>
+        <item type="IMAGE" isRendition="true">
+            <webobject isVisual="true" isAudioOnly="false" unit="px">
+                <objectWidth>133</objectWidth>
+                <objectHeight>100</objectHeight>
+            </webobject>
+            <imageinfo isLandscape="true" unit="px">
+                <width>133</width>
+                <height>100</height>
+            </imageinfo>
+            <rendition>detailpage</rendition>
+            <location>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/detailpage.jpg</location>
+            <importsource/>
+            <mimetype>image/jpeg</mimetype>
+            <size>9559</size>
+            <hash>b5df15e86ee03eec6feb4b5116325d3d54f24788</hash>
+        </item>
+        <item type="IMAGE" isRendition="true">
+            <webobject isVisual="true" isAudioOnly="false" unit="px">
+                <objectWidth>640</objectWidth>
+                <objectHeight>480</objectHeight>
+            </webobject>
+            <imageinfo isLandscape="true" unit="px">
+                <width>640</width>
+                <height>480</height>
+            </imageinfo>
+            <rendition>fullsize</rendition>
+            <location>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/fullsize.jpg</location>
+            <importsource/>
+            <mimetype>image/jpeg</mimetype>
+            <size>66486</size>
+            <hash>25962db42a3a01ca4d4d61923b7ebaa70382dff8</hash>
+        </item>
+        <item type="IMAGE" isRendition="true">
+            <webobject isVisual="true" isAudioOnly="false" unit="px">
+                <objectWidth>196</objectWidth>
+                <objectHeight>147</objectHeight>
+            </webobject>
+            <imageinfo isLandscape="true" unit="px">
+                <width>196</width>
+                <height>147</height>
+            </imageinfo>
+            <rendition>printpreview</rendition>
+            <location>market/f3/f3584d8f3729f7a91133648483068e73f27447b9/printpreview.jpg</location>
+            <importsource/>
+            <mimetype>image/jpeg</mimetype>
+            <size>13151</size>
+            <hash>67c869f1a54e2d29c8ba0a1e1a799499bca4b82d</hash>
+        </item>
+    </items>
+</registry>

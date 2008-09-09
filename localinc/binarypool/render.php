@@ -11,6 +11,9 @@ class binarypool_render {
     private static $MIME_MOVIES = array(
         'application/x-shockwave-flash',
     );
+    private static $MIME_XML = array(
+        'text/xml',
+    );
     
     
     /**
@@ -148,6 +151,8 @@ class binarypool_render {
     public static function getType($mime) {
         if (in_array($mime, self::$MIME_MOVIES)) {
             return 'MOVIE';
+        } else if (in_array($mime, self::$MIME_XML)) {
+            return 'XML';
         } else {
             return 'IMAGE';
         }

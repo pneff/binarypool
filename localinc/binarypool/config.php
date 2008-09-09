@@ -57,8 +57,16 @@ class binarypool_config {
      *
      * @return int seconds
      */
-    public static function getCacheRevalidate() {
+    public static function getCacheRevalidate($bucket = NULL) {
         if (! self::$loaded) self::load();
+        
+        $buckets = self::getBuckets();
+        if ( !is_null($bucket) 
+                && isset($buckets[$bucket])
+                    && isset($buckets[$bucket]['url_revalidate']) ) {
+            return $buckets[$bucket]['url_revalidate'];
+        }
+        
         return self::$cacheRevalidate;
     }
     
