@@ -7,6 +7,7 @@ require_once(dirname(__FILE__).  '/validate.php');
 require_once(dirname(__FILE__).  '/mime.php');
 require_once(dirname(__FILE__).  '/storage_driver_file.php');
 require_once(dirname(__FILE__).  '/storage_driver_s3.php');
+require_once(dirname(__FILE__).  '/storage_driver_s3inc.php');
 
 /**
  * Handles storing of files in the binary pool. The repository
