@@ -24,6 +24,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     }
 
     public function save($local_file, $remote_file) {
+        $this->clearstatcache();
         $targetFile = $this->absolutize($remote_file);
         
         $dir = dirname($targetFile);
@@ -56,6 +57,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     }
 
     public function saveRenditions($renditions, $dir) {
+        $this->clearstatcache();
         if ($dir[strlen($dir)-1] !== '/') {
             $dir .= '/';
         }
@@ -68,6 +70,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     }
     
     public function rename($source, $target) {
+        $this->clearstatcache();
         $sourceAbs = $this->absolutize($source);
         $targetAbs = $this->absolutize($target);
         if (!file_exists($sourceAbs)) {
@@ -113,6 +116,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     }
     
     public function getURLLastModified($url, $symlink) {
+        $this->clearstatcache();
         if (!$this->fileExists($symlink)) {
             return array('time' => 0, 'revalidate' => true, 'cache_age' => 0);
         }
@@ -169,6 +173,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
     }
     
     public function symlink($target, $link, $refresh = false) {
+        $this->clearstatcache();
         $link = $this->absolutize($link);
         
         if (! file_exists(dirname($link))) {
@@ -203,6 +208,18 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
             rmdir($path);
         } else {
             unlink($path);
+        }
+    }
+    
+    /**
+     * Clear the stat cache - solves issues in conjunction with
+     * PHP-FCGI and the downloaded view, when it comes to flushing the cache
+     */
+    private function clearstatcache() {
+        static $cleared = false;
+        if ( !$cleared ) {
+            clearstatcache();
+            $cleared = true;
         }
     }
 }
