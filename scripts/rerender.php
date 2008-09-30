@@ -7,6 +7,8 @@
 
 require_once(dirname(__FILE__) . '/../inc/api/init.php');
 api_init::start();
+ini_set("display_errors", "stderr");
+ini_set("memory_limit", "400M");
 
 // Command line
 $max = 0;
@@ -38,12 +40,16 @@ function walk_callback($dir) {
         
         $asset = $storage->getAssetObject($dir . 'index.xml');
         $processed++;
-        $storage->save($asset->getType(),
-            array('_' => array('file' => $asset->getOriginal())),
-            true);
+        try {
+            $storage->save($asset->getType(),
+                array('_' => array('file' => $asset->getOriginal())),
+                true);
+        } catch (Exception $e) {
+           echo "    ERROR: Could not convert " . $dir . "index.xml\n";
+        }
     }
     
-    if ($processed >= $max) {
+    if ($max > 0 && $processed >= $max) {
         echo "Processed $processed files. Terminating.\n";
         exit(0);
     }
@@ -76,13 +82,19 @@ function walk_dir($root, $callback, $exclude = array()) {
 }
 
 foreach ($buckets as $bucket) {
-    $storage = new binarypool_storage($bucket);
+    if (strpos($bucket, '/') !== false) {
+        $file = $bucket;
+        $bucket = substr($bucket, 0, strpos($bucket, '/'));
+        $storage = new binarypool_storage($bucket);
+        walk_callback(rtrim($file, '/') . '/');
+    } else {
+        $storage = new binarypool_storage($bucket);
 
-    printf("[%10s] Processing binaries.\n", $bucket);
-    $processed = 0;
-    walk_dir(binarypool_config::getRoot() . $bucket, 'walk_callback',
-        array('created', 'expiry', 'downloaded'));
-    
-    printf("[%10s] %d binaries processed.\n", $bucket, $processed);
+        printf("[%10s] Processing binaries.\n", $bucket);
+        $processed = 0;
+        walk_dir(binarypool_config::getRoot() . $bucket, 'walk_callback',
+            array('created', 'expiry', 'downloaded'));
+
+        printf("[%10s] %d binaries processed.\n", $bucket, $processed);
+    }
 }
-?>
