@@ -163,7 +163,7 @@ abstract class binarypool_storage_driver {
      *                  false otherwise.
      *    - cache_age: Seconds since the URL was last downloaded.
      */
-    public abstract function getURLLastModified($url, $symlink);
+    public abstract function getURLLastModified($url, $symlink, $bucket);
     
     /**
      * Returns the asset ID where the symlink points to.

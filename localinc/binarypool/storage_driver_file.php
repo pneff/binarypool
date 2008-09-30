@@ -115,7 +115,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
         return false;
     }
     
-    public function getURLLastModified($url, $symlink) {
+    public function getURLLastModified($url, $symlink, $bucket) {
         $this->clearstatcache();
         if (!$this->fileExists($symlink)) {
             return array('time' => 0, 'revalidate' => true, 'cache_age' => 0);
@@ -138,7 +138,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
         
         $cache_age = $now - $stat['mtime'];
         $revalidate = false;
-        if ($cache_age > binarypool_config::getCacheRevalidate()) {
+        if ($cache_age > binarypool_config::getCacheRevalidate($bucket)) {
             $revalidate = true;
         }
         

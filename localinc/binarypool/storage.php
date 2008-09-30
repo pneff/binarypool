@@ -65,7 +65,7 @@ class binarypool_storage {
     }
     
     public function getURLLastModified($url, $symlink) {
-        return $this->storage->getURLLastModified($url, $symlink);
+        return $this->storage->getURLLastModified($url, $symlink, $this->bucketName);
     }
     
     public function getAssetForLink($symlink) {

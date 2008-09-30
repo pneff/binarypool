@@ -113,13 +113,13 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
         $this->s3->symlink($target, $link, $refresh);
     }
     
-    public function getURLLastModified($url, $symlink) {
+    public function getURLLastModified($url, $symlink, $bucket) {
         if ($this->s3->fileExists($symlink)) {
-            return $this->s3->getURLLastModified($url, $symlink);
+            return $this->s3->getURLLastModified($url, $symlink, $bucket);
         } else if ($this->local->fileExists($symlink)) {
-            return $this->local->getURLLastModified($url, $symlink);
+            return $this->local->getURLLastModified($url, $symlink, $bucket);
         } else {
-            return $this->s3->getURLLastModified($url, $symlink);
+            return $this->s3->getURLLastModified($url, $symlink, $bucket);
         }
     }
     

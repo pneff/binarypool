@@ -108,10 +108,10 @@ class binarypool_views {
         $lastmodified = api_command_create::lastModified($bucket, $metadata['URL']);
         
         $refresh = False;
-        if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate() ) {
+        if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate($bucket) ) {
             $refresh = True;
         }
-                
+        
         self::createLink($bucket, $assetDir, $symlink, $refresh);
     }
     

@@ -239,7 +239,7 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         );
     }
     
-    public function getURLLastModified($url, $symlink) {
+    public function getURLLastModified($url, $symlink, $bucket) {
         $symlink .= '.link';
         $now = $this->time;
         if (!$this->fileExists($symlink)) {
@@ -263,7 +263,7 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         
         $cache_age = $now - $contents['mtime'];
         $revalidate = false;
-        if ($cache_age > binarypool_config::getCacheRevalidate()) {
+        if ($cache_age > binarypool_config::getCacheRevalidate($bucket)) {
             $revalidate = true;
         }
         
