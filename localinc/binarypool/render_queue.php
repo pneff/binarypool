@@ -54,5 +54,6 @@ class binarypool_render_queue extends binarypool_render_base {
         );
         $msg = new MapMessage($message, $headers);
         $c->send($queueName, $msg);
+        $c->disconnect();
     }
 }
