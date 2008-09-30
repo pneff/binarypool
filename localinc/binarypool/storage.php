@@ -311,8 +311,9 @@ class binarypool_storage {
     public function saveAsset($asset, $assetFile) {
         $assetFileTmp = $this->getTempFile();
         file_put_contents($assetFileTmp, $asset->getXML());
-        $this->storage->save($assetFileTmp, $assetFile);
+        $retval = $this->storage->save($assetFileTmp, $assetFile);
         unlink($assetFileTmp);
+        return $retval;
     }
     
     /**
