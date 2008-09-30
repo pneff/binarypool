@@ -5,3 +5,6 @@
 # Extensible markup language (XML), a subset of SGML
 # from Marc Prud'hommeaux (marc@apocalypse.org)
 0       string       \<?xml             text/xml
+
+# Shockwave Flash
+0       string      CWS                 application/x-shockwave-flash
