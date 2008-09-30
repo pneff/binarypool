@@ -3,7 +3,8 @@ require_once(dirname(__FILE__).'/config.php');
 require_once(dirname(__FILE__).'/render_image.php');
 require_once(dirname(__FILE__).'/render_queue.php');
 require_once(dirname(__FILE__).'/render_pdf.php');
-require_once(dirname(__FILE__).'/render_pdfmagick.php');
+require_once(dirname(__FILE__).'/render_eps.php');
+require_once(dirname(__FILE__).'/render_pdfswitch.php');
 require_once(dirname(__FILE__).'/storage.php');
 require_once(dirname(__FILE__).'/mime.php');
 
