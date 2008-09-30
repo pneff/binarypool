@@ -29,29 +29,19 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         binarypool_fileinfo::setCache($url,
             binarypool_fileinfo::getFileinfo($local_file));
 
-        $info = $this->client->getObjectInfo(
+        $retval = $this->client->putObjectFile(
+            $local_file,
             $this->cfg['bucket'],
             $remote_file,
-            false
+            S3::ACL_PUBLIC_READ,
+            array(),
+            binarypool_mime::getMimeType($local_file)
         );
-
-        if ($info === false) {
-            $retval = $this->client->putObjectFile(
-                $local_file,
-                $this->cfg['bucket'],
-                $remote_file,
-                S3::ACL_PUBLIC_READ,
-                array(),
-                binarypool_mime::getMimeType($local_file)
-            );
-            $this->flushCache($remote_file);
-            if ($retval === false) {
-                throw new binarypool_exception(105, 500, "Could not copy file to its final destination on S3: $remote_file");
-            }
-            return $retval;
-        } else {
-            return true;
+        $this->flushCache($remote_file);
+        if ($retval === false) {
+            throw new binarypool_exception(105, 500, "Could not copy file to its final destination on S3: $remote_file");
         }
+        return $retval;
     }
 
     public function getRenditionsDirectory($dir) {

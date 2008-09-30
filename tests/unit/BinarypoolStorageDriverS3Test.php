@@ -38,12 +38,6 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
     function testSaveExpectS3Action() {
         $bucket = $this->getS3Bucket();
         $s3 = $this->getS3Client();
-        $s3->expectOnce('getObjectInfo', array(
-            'bin.staticlocal.ch',
-            'test/uploaded.jpg',
-            false
-        ));
-        $s3->setReturnValue('getObjectInfo', false);
         $s3->expectOnce('putObjectFile', array(
             $this->testfile,
             'bin.staticlocal.ch',
@@ -59,20 +53,20 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         $this->assertEqual($storage->save($this->testfile, 'test/uploaded.jpg'), true);
     }
     
-    function testSaveExisting() {
+    /**
+     * Make sure getObjectInfo is not called.
+     * This used to be called because we only uploaded files when they
+     * didn't exist yet. This has since changed to always upload.
+     */
+    function testSaveForced() {
         $bucket = $this->getS3Bucket();
         $s3 = $this->getS3Client();
-        $s3->expectOnce('getObjectInfo', array(
-            'bin.staticlocal.ch',
-            'test/uploaded.jpg',
-            false
-        ));
-        $s3->setReturnValue('getObjectInfo', true);
-        $s3->expectNever('putObjectFile');
+        $s3->expectNever('getObjectInfo');
+        $s3->expectOnce('putObjectFile');
         
         $storage = new binarypool_storage_driver_s3($bucket['storage'], $s3,
             $this->getMockCache());
-        $this->assertEqual($storage->save($this->testfile, 'test/uploaded.jpg'), true);
+        $storage->save($this->testfile, 'test/uploaded.jpg');
     }
 
     function testGetRenditionDirectory() {
@@ -380,30 +374,6 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         $storage = new binarypool_storage_driver_s3($bucket['storage'], $s3,
             $this->getMockCache());
         $this->assertEqual($storage->getFile('foo/bar/dir/index.xml'), 'response data');
-    }
-    
-    /**
-     * The S3 class may sometimes use simplexml_load_string on XML
-     * responses. Get ready for when that happens.
-     */
-    function testGetFileXML() {
-        $bucket = $this->getS3Bucket();
-        $s3 = $this->getS3Client();
-        
-        $s3_response = new STDClass;
-        $s3_response->error = false;
-        $s3_response->code = 200;
-        $s3_response->body = simplexml_load_string('<asset><id>testing</id><renditions/></asset>');
-        $s3_response->headers = array('type' => 'application/xml');
-        
-        $s3->expectOnce('getObject', array('bin.staticlocal.ch', 'foo/bar/dir/index.xml'));
-        $s3->setReturnValue('getObject', $s3_response);
-        
-        $storage = new binarypool_storage_driver_s3($bucket['storage'], $s3,
-            $this->getMockCache());
-        $this->assertEqual($storage->getFile('foo/bar/dir/index.xml'),
-            "<?xml version=\"1.0\"?>\n" .
-            "<asset><id>testing</id><renditions/></asset>\n");
     }
     
     function testGetFileError() {

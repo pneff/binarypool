@@ -288,7 +288,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $xml = $asset->getXML();
         $dom = DOMDocument::loadXML($xml);
         $xp = new DOMXPath($dom);
-        
+
         // Test that the same information is still around
         $this->assertXPath($xp, '/registry/@version', '3.0');
         $this->assertXPath($xp, '/registry/items/item/location', 'http://bin.staticlocal.ch/vw_golf.jpg');
