@@ -142,10 +142,11 @@ class api_command_create extends api_command_base {
             $httpc = new binarypool_httpclient();
             while ( $retries ) {
                 try {
-                    $result = $httpc->get($url, $lastmodified['time']);
+                    $result = $httpc->download($url, $tmpfile, $lastmodified['time']);
                     if ( $result['code'] < 500 ) { break; }
                 } catch ( binarypool_httpclient_exception $e ) {
                     // ignore - dropped connections etc. - retry
+                    $this->log->debug("Failed download attempt from %s: %s", $url, $e);
                 }
                 sleep(1);
                 $retries--;
@@ -159,7 +160,7 @@ class api_command_create extends api_command_base {
             return array();
         }
         
-        if ( $result['code'] != 200 || empty($result['body']) ) {
+        if ( $result['code'] != 200 || !filesize($tmpfile) ) {
             binarypool_views::flagBadUrl($this->bucket, $url);
             throw new binarypool_exception(121, 400, "File could not be fetched from URL: " . $url);
         }
@@ -175,16 +176,8 @@ class api_command_create extends api_command_base {
                                 $filename
                                 );
         
-        $file = tempnam(sys_get_temp_dir(), 'binary');
-        if ($file == '' || $file === FALSE) {
-            throw new binarypool_exception(104, 500, "Could not create temporary file");
-        }
-        array_push($this->tmpfiles, $file);
-        
-        file_put_contents($file, $result['body']);
-        
         return array('_' => array(
-            'file'     => $file,
+            'file'     => $tmpfile,
             'filename' => $filename,
         ));
     }

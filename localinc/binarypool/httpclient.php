@@ -93,15 +93,37 @@ class binarypool_httpclient {
      *                'headers' => $headers,
      *                'body' => $output);
      * 
+     * Warning: this method returns the body in memory - for big files
+     * you may have memory problems
+     * 
      * @param String $url
-     * @param int $lastmodified
+     * @param int $lastmodified for HTTP Last-Modified
      * @return array
      */
     public function get($url, $lastmodified = 0) {
         $curl = $this->prepareCurl($url, $lastmodified);
         return $this->executeCurl($curl);
     }
-    
+
+    /**
+     * Download the URL to a local file.
+     * 
+     * @param String $url to download from
+     * @param String $file tmp file to download to
+     * @param int $lastmodified for HTTP Last-Modified
+     */
+    public function download($url, $file, $lastmodified = 0) {
+        $f = fopen($file, "w");
+
+        $curl = $this->prepareCurl($url, $lastmodified);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_FILE, $f);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 1200);
+
+        $result = $this->executeCurl($curl);
+        fclose($f);
+        return $result;
+    }
 }
 
 class binarypool_httpclient_exception extends api_exception {

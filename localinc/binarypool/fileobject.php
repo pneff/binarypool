@@ -46,10 +46,8 @@ class binarypool_fileobject {
     protected function downloadFile($url) {
         $tmpfile = $this->getTempfile($url);
         if (!file_exists($tmpfile)) {
-            $result = $this->http_client->get($url);
-            if ($result['code'] === 200) {
-                file_put_contents($tmpfile, $result['body']);
-            } else {
+            $result = $this->http_client->download($url, $tmpfile);
+            if ($result['code'] !== 200) {
                 return null;
             }
         }
