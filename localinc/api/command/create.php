@@ -125,6 +125,16 @@ class api_command_create extends api_command_base {
         
         $lastmodified = self::lastModified($this->bucket, $url);
         
+        if ( binarypool_config::getCacheRevalidate($this->bucket) === 0 ) {
+            $lastmodified['time'] = 0;
+        }
+        
+        $tmpfile = tempnam(sys_get_temp_dir(), 'binary');
+        if ($tmpfile == '' || $tmpfile === FALSE) {
+            throw new binarypool_exception(104, 500, "Could not create temporary file");
+        }
+        array_push($this->tmpfiles, $tmpfile);
+        
         $result = array('code' => 0, 'headers' => array(), 'body' => ''); 
         $retries = 3;
         
