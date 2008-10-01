@@ -15,7 +15,7 @@ class BinarypoolRenderQueueTest extends BinarypoolTestCase {
         $out = binarypool_render_queue::render(
             $sourceFile, $resizedFile,
             $assetPath,
-            array('server' => '__test__', '_bucket' => 'thebucket')
+            array('queue' => '__test__', '_bucket' => 'thebucket')
         );
         $this->assertNull($out);
         $this->assertEqual(count(binarypool_render_queue::$messages), 1);
@@ -25,8 +25,7 @@ class BinarypoolRenderQueueTest extends BinarypoolTestCase {
         unset($message['tstamp']);
         $this->assertEqual($message,
             array('asset' => $assetPath,
-                  'server' => '__test__',
-                  'config' => array('server' => '__test__', '_bucket' => 'thebucket'),
+                  'config' => array('queue' => '__test__', '_bucket' => 'thebucket'),
                   'bucket' => 'thebucket',
             ));
     }

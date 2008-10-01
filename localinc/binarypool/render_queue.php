@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__).'/../../inc/stomp/Stomp.php');
+require_once(dirname(__FILE__).'/../../inc/Amazon/SQS/Client.php');
 require_once(dirname(__FILE__).'/config.php');
 require_once(dirname(__FILE__).'/render.php');
 
@@ -20,40 +20,31 @@ class binarypool_render_queue extends binarypool_render_base {
      * @return: null, as the rendition is generated asynchronously.
      */
     public static function render($source, $target, $assetFile, $config) {
-        $server = $config['server'];
         $bucket = $config['_bucket'];
+        $queue = $config['queue'];
         
         $message = array(
             'asset'  => $assetFile,
-            'server' => $server,
             'config' => $config,
             'bucket' => $bucket,
             'tstamp' => time(),
         );
-        if ($server == '__test__') {
+        
+        if ($queue == '__test__') {
             array_push(self::$messages, $message);
         } else {
             $log = new api_log();
             $log->debug("Queueing message: $assetFile");
-            self::queueMessage($message);
+            
+            $conn = new Amazon_SQS_Client($config['access_id'],
+                $config['secret_key']);
+            $response = $conn->sendMessage(array(
+                'QueueName' => $queue,
+                'MessageBody' => json_encode($message)));
+            $result = $response->getSendMessageResult();
+            
+            $log->debug("Queued message ID %s for asset file %s",
+                $result->getMessageId(), $assetFile);
         }
-    }
-    
-    protected static function queueMessage($message) {
-        $server = $message['config']['server'];
-        $queueName = isset($message['config']['queue']) ? $message['config']['queue'] : '/queue/test';
-        
-        $c = new StompConnection('tcp://' . $server . ':61613');
-        $result = $c->connect();
-        if ($result == null || $result->command != 'CONNECTED') {
-            throw new binarypool_exception(123, 500, "Could not connect to the queue server $server");
-        }
-        
-        $headers = array(
-            'persistent' => 'true',
-        );
-        $msg = new MapMessage($message, $headers);
-        $c->send($queueName, $msg);
-        $c->disconnect();
     }
 }
