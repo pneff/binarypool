@@ -1,17 +1,24 @@
 <?php
+require_once(dirname(__FILE__) . '/../../../inc/S3.php');
+
 class api_command_base extends api_command {
     protected $log = null;
     protected $viewStart = null;
     protected $ignoreView = false;
+    protected $clientxsl = TRUE;
     
     public function __construct($route) {
         parent::__construct($route);
         
         $this->viewStart = microtime(true);
+        //$this->log = new api_log();
         $this->log = new api_log();
         $this->bucket = isset($route['bucket']) ? $route['bucket'] : '';
         $this->response->setCode(200);
         $this->response->setContentLengthOutput(true);
+        $this->clientxsl = !isset($_GET['NOXSL']);
+        array_push($this->data, new api_model_xml(
+            sprintf('<clientxsl>%s</clientxsl>', intval($this->clientxsl))));
     }
     
     public function getData() {
@@ -21,6 +28,7 @@ class api_command_base extends api_command {
     
     public function process() {
         try {
+             
             return $this->execute();
         
         } catch (binarypool_exception $e) {
@@ -32,6 +40,13 @@ class api_command_base extends api_command {
             $xml = '<status type="error" error="' . $e->getCode() . '"><msg>' .
                 htmlspecialchars($e->getMessage()) . 
                 '</msg></status>';
+            array_push($this->data, new api_model_xml($xml));
+        
+        } catch (S3Exception $e) {
+            $this->log->err("S3 Exception: Error code: %d, message: %s",
+                $e->getCode(), $e->getMessage());
+            $this->setResponseCode(500);
+            $xml = "<status type='error' error='125'><msg>" . $e->getMessage() . "</msg></status>";
             array_push($this->data, new api_model_xml($xml));
             
         } catch (Exception $e) {
@@ -59,10 +74,13 @@ class api_command_base extends api_command {
     }
     
     protected function logRequest() {
-        $this->log->debug("%s %s%s - Response time: %f seconds",
+        $log = new binarypool_profilelog();
+        $log->info("%s %s%s - Response time: %f seconds, Peak Mem Use: %s bytes",
             $this->request->getVerb(),
             empty($_SERVER['HTTP_HOST']) ? '' : 'http://' . $_SERVER['HTTP_HOST'],
             $_SERVER['REQUEST_URI'],
-            microtime(true) - $this->viewStart);
+            microtime(true) - $this->viewStart,
+            memory_get_peak_usage()
+            );
     }
 }
