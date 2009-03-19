@@ -613,10 +613,7 @@ class Amazon_SQS_Client implements Amazon_SQS_Interface
         if ($request->isSetQueueName()) {
             $parameters['QueueName'] =  $request->getQueueName();
         }
-        foreach  ($request->getAttributeName() as $attributeNameIndex => $attributeName) {
-            $parameters["GetQueueAttributes" . "." . "AttributeName" . "."  . ($attributeNameIndex + 1)] =  $attributeName;
-        }	
-
+        $parameters['AttributeName'] = $request->getAttributeName();
         return $parameters;
     }
         

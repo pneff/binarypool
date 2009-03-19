@@ -59,7 +59,7 @@ class Amazon_SQS_Model_GetQueueAttributes extends Amazon_SQS_Model
     {
         $this->_fields = array (
         'QueueName' => array('FieldValue' => null, 'FieldType' => 'string'),
-        'AttributeName' => array('FieldValue' => array(), 'FieldType' => array('string')),
+        'AttributeName' => array('FieldValue' => null, 'FieldType' => 'string'),
         );
         parent::__construct($data);
     }
