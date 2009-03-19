@@ -59,6 +59,18 @@ $cmd = $m->add($default->dup()
     ->config(array('command' => 'view', 'viewname' => 'downloaded')));
 $m->add($cmd->dup()->when(array('verb' => 'HEAD')));
 
+// Migration path for binarypool serving
+$cmd = $m->add($default->dup()
+    ->route('/migrate/:stage/priv/:bucket/+asset')
+    ->when(array('verb' => 'GET'))
+    ->config(array('command' => 'migrationserve', 'area' => 'priv')));
+$m->add($cmd->dup()->when(array('verb' => 'HEAD')));
+$cmd = $m->add($default->dup()
+    ->route('/migrate/:stage/:bucket/+asset')
+    ->when(array('verb' => 'GET'))
+    ->config(array('command' => 'migrationserve', 'area' => 'web')));
+$m->add($cmd->dup()->when(array('verb' => 'HEAD')));
+
 // https://wiki.local.ch/display/I3/Get+binary+or+asset
 $cmd = $m->add($default->dup()
     ->when(array('verb' => 'GET'))
@@ -70,6 +82,11 @@ $m->add($default->dup()
     ->when(array('verb' => 'POST'))
     ->route('/:bucket')
     ->config(array('command' => 'create')));
+    
+$m->add($default->dup()
+    ->when(array('verb' => 'GET'))
+    ->route('/:bucket')
+    ->config(array('command' => 'bucket')));
 
 // Fallback
 $m->add($default->dup()->route('/*')->config(array('command' => 'fallback')));
