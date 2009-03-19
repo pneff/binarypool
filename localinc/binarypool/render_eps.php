@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__).'/config.php');
 require_once(dirname(__FILE__).'/render.php');
 require_once(dirname(__FILE__).'/render_base.php');
+require_once(dirname(__FILE__).'/render_pdf.php');
 
 /**
  * EPS conversion using ImageMagick.
@@ -9,9 +10,9 @@ require_once(dirname(__FILE__).'/render_base.php');
 class binarypool_render_eps extends binarypool_render_base {
     public static function render($source, $target, $assetFile, $config) {
         $format = $config['format'];
-        $target = $target . '.' . $format;
-        self::convert($source, $target);
-        return $target;
+        $targetExt = $target . '.' . $format;
+        self::convert($source, $targetExt);
+        return $targetExt;
     }
     
     protected static function convert($from, $to) {

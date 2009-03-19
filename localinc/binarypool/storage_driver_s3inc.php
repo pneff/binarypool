@@ -13,10 +13,10 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
     }
 
     public function absolutize($file) {
-        if ($this->local->fileExists($file)) {
-            return $this->local->absolutize($file);
-        } else {
+        if ($this->s3->fileExists($file)) {
             return $this->s3->absolutize($file);
+        } else {
+            return $this->local->absolutize($file);
         }
     }
 
@@ -68,24 +68,28 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
     }
     
     public function getFile($file) {
-        if ($this->local->fileExists($file)) {
-            return $this->local->getFile($file);
-        } else if (strrpos($file, '/index.xml') === strlen($file) - 10) {
-            $file = $this->getTransformedIndexFile($file);
-            return file_get_contents($file);
+        if ($this->s3->fileExists($file)) {
+            if (strrpos($file, '/index.xml') === strlen($file) - 10) {
+                $file = $this->getTransformedIndexFile($file);
+                return file_get_contents($file);
+            } else {
+                return $this->s3->getFile($file);
+            }
         } else {
-            return $this->s3->getFile($file);
+            return $this->local->getFile($file);
         }
     }
     
     public function sendFile($file) {
-        if ($this->local->fileExists($file)) {
-            return $this->local->sendFile($file);
-        } else if (strrpos($file, '/index.xml') === strlen($file) - 10) {
-            $file = $this->getTransformedIndexFile($file);
-            readfile($file);
+        if ($this->s3->fileExists($file)) {
+            if (strrpos($file, '/index.xml') === strlen($file) - 10) {
+                $file = $this->getTransformedIndexFile($file);
+                readfile($file);
+            } else {
+                return $this->s3->sendFile($file);
+            }
         } else {
-            return $this->s3->sendFile($file);
+            return $this->local->sendFile($file);
         }
     }
     
@@ -109,12 +113,16 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
         }
     }
     
-    public function symlink($target, $link, $refresh = false) {
-        $this->s3->symlink($target, $link, $refresh);
+    public function symlink($target, $link) {
+        $this->s3->symlink($target, $link);
+    }
+    
+    public function relink($target, $link) {
+        $this->s3->relink($target, $link);
     }
     
     public function getURLLastModified($url, $symlink, $bucket) {
-        if ($this->s3->fileExists($symlink)) {
+        if ($this->s3->fileExists($symlink . '.link')) {
             return $this->s3->getURLLastModified($url, $symlink, $bucket);
         } else if ($this->local->fileExists($symlink)) {
             return $this->local->getURLLastModified($url, $symlink, $bucket);
@@ -142,7 +150,7 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
     protected function getTransformedIndexFile($file) {
         $url = $this->s3->absolutize($file);
         $fproxy = new binarypool_fileobject($url);
-        if (is_null($fproxy->file)) {
+        if ( !$fproxy->exists() ) {
             return null;
         }
         
@@ -152,8 +160,10 @@ class binarypool_storage_driver_s3inc extends binarypool_storage_driver {
         $locs = $xp->query('/registry/items/item/location');
         foreach ($locs as $loc) {
             if (!$loc->hasAttribute('absolute') || $loc->getAttribute('absolute') !== 'true') {
-                $loc->setAttribute('absolute', 'true');
-                $loc->nodeValue = $this->s3->absolutize($loc->nodeValue);
+                if ($this->s3->fileExists($loc->nodeValue)) {
+                    $loc->setAttribute('absolute', 'true');
+                    $loc->nodeValue = $this->s3->absolutize($loc->nodeValue);
+                }
             }
         }
         file_put_contents($fproxy->file, $dom->saveXML());

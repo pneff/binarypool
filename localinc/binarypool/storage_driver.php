@@ -3,6 +3,12 @@
  * Base class for all storage drivers.
  */
 abstract class binarypool_storage_driver {
+    
+    /**
+     * Store the bucket name for logging purposes
+     */
+    public $bucketName = "";
+    
     /**
      * Return the absolute path to the given file or path.
      * The file does not have to exist yet.
@@ -146,10 +152,19 @@ abstract class binarypool_storage_driver {
      *                        the link.
      * @param $link string:   Path of the symlink to create, relative to
      *                        the storage root.
-     * @param $refresh bool:  True if the link should be touched when
-     *                        it already exists.
      */
-    public abstract function symlink($target, $link, $refresh = false);
+    public abstract function symlink($target, $link);
+    
+    /**
+     * Refresh an existing symlink (meaning it's timestamp get's updated).
+     * If it doesn't exist, create it
+     * 
+     * @param $target string: Path of the file to link to, relative to
+     *                        the link.
+     * @param $link string:   Path of the symlink to create, relative to
+     *                        the storage root.
+     */
+    public abstract function relink($target, $link);
     
     /**
      * Checks if the given URL should be downloaded again.

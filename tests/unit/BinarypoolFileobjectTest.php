@@ -92,7 +92,7 @@ class BinarypoolFileobjectTest extends BinarypoolTestCase {
         ));
         
         $fproxy = new binarypool_fileobject($this->url, $http_mock);
-        $this->assertNull($fproxy->file);
+        $this->assertFalse($fproxy->exists());
         $this->assertEqual($fproxy->isRemote(), true);
     }
     

@@ -1,8 +1,17 @@
 <?php
 require_once("BinarypoolTestCase.php");
+require_once('simpletest/mock_objects.php');
+require_once(dirname(__FILE__).'/../../localinc/binarypool/asset.php');
 require_once(dirname(__FILE__).'/../../localinc/binarypool/config.php');
+require_once(dirname(__FILE__).'/../../localinc/binarypool/lastmodified.php');
 require_once(dirname(__FILE__).'/../../localinc/binarypool/storage.php');
+require_once(dirname(__FILE__).'/../../localinc/binarypool/storagefactory.php');
 require_once(dirname(__FILE__).'/../../localinc/binarypool/views.php');
+
+Mock::generate('binarypool_lastmodified','Mock_binarypool_lastmodified');
+Mock::generate('binarypool_storage','Mock_binarypool_storage');
+Mock::generate('binarypool_storagefactory','Mock_binarypool_storagefactory');
+Mock::generate('binarypool_asset','Mock_binarypool_asset');
 
 /**
  * Tests the binarypool_views class which puts each binary
@@ -21,6 +30,18 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
         $this->assertNotNull($asset);
         $this->assetFile = $asset;
         $this->assetId = '096dfa489bc3f21df56eded2143843f135ae967e';
+        
+        binarypool_lastmodified::resetMemoryCache();
+        binarypool_views::$lastModified = null;
+        binarypool_views::$storageFactory = null;
+        
+    }
+    
+    function tearDown() {
+        parent::tearDown();
+        
+        binarypool_views::$storageFactory = null;
+        binarypool_views::$lastModified = null;
     }
     
     /**
@@ -43,7 +64,7 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
      * expiry date.
      */
     function testExpireDateView() {
-        $date = date('Y/m/d', strtotime('+7 days'));
+        $date = date('Y/m/d', time() + ( 7 * 24 * 60 * 60 ));
         $viewExpiresAt = self::$BUCKET . 'expiry/' . $date . '/' . $this->assetId;
         
         binarypool_views::created('test', $this->assetFile, array());
@@ -79,7 +100,7 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
      */
     function testUpdateExpireDateViewUnchanged() {
         // Paths to assert against
-        $date = date('Y/m/d', strtotime('+7 days'));
+        $date = date('Y/m/d', time() + ( 7 * 24 * 60 * 60 ));
         $viewExpires = self::$BUCKET . 'expiry/' . $date . '/' . $this->assetId;
 
         // First view correctly created?
@@ -170,6 +191,59 @@ class BinarypoolViewsTest extends BinarypoolTestCase {
             	'Symlink does not point to /dev/null');
     }
     
+    function testCreatedSymlink() {
+        $this->assignLastModified();
+        binarypool_views::$lastModified->setReturnValue('lastModified', array('cache_age'=>0));
+        
+        $asset = $this->createMockAsset();
+        $storage = $this->createMockStorage($asset);
+        $storage->expectCallCount('symlink', 3);
+        $this->assignMockStorageFactory($storage);
+        
+        binarypool_views::created('test', 'foo', array('URL'=>'http://local.ch/foo.gif'));
+    }
+    
+    function testUpdatedSymlink() {
+        $this->assignLastModified();
+        
+        $cache_age = binarypool_config::getCacheRevalidate('test') + 1;
+        binarypool_views::$lastModified->setReturnValue(
+        	'lastModified', array('cache_age'=>$cache_age));
+        
+        $asset = $this->createMockAsset();
+        $storage = $this->createMockStorage($asset);
+        $storage->expectCallCount('symlink', 2);
+        $storage->expectCallCount('relink', 1);
+        $this->assignMockStorageFactory($storage);
+        
+        binarypool_views::created('test', 'foo', array('URL'=>'http://local.ch/foo.gif'));
+    }
+    
+    function assignLastModified() {
+        $lastModified = new Mock_binarypool_lastmodified();
+        binarypool_views::$lastModified = $lastModified;
+    }
+    
+    function createMockAsset() {
+        $asset = new Mock_binarypool_asset();
+        $asset->setReturnValue('getCreated', time());
+        $asset->setReturnValue('getExpiry', time() + ( 7 * 24 * 60 * 60 ) );
+        $asset->setReturnValue('getHash', sha1(time()));
+        $asset->setReturnValue('getBasePath', '/tmp');
+        return $asset;
+    }
+    
+    function createMockStorage($asset) {
+        $storage = new Mock_binarypool_storage();
+        $storage->setReturnValue('getAssetObject', $asset);
+        return $storage;
+    }
+    
+    function assignMockStorageFactory($storage) {
+        $storageFactory = new Mock_binarypool_storagefactory();
+        $storageFactory->setReturnValue('getStorage', $storage);
+        binarypool_views::$storageFactory = $storageFactory;
+    }
     
 }
-?>
+

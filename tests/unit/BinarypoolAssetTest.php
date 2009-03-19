@@ -294,7 +294,7 @@ class BinarypoolAssetTest extends BinarypoolTestCase {
         $this->assertXPath($xp, '/registry/items/item/location', 'http://bin.staticlocal.ch/vw_golf.jpg');
         $this->assertXPath($xp, '/registry/items/item/location/@absolute', 'true');
         $this->assertXPath($xp, '/registry/items/item/mimetype', 'image/jpeg');
-        $this->assertXPath($xp, '/registry/items/item/size', '106237');
+        $this->assertXPath($xp, '/registry/items/item/size', '51941');
         return $asset;
     }
 

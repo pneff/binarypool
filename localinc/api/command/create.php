@@ -10,6 +10,8 @@ class api_command_create extends api_command_base {
     // Files that need to be cleaned up in the end.
     private $tmpfiles = array();
     
+    public static $lastModified = null;
+    
     protected function execute() {
         try {
             $this->upload($this->bucket);
@@ -28,6 +30,7 @@ class api_command_create extends api_command_base {
         $callback = $this->request->getParam('Callback', '');
         $files = $this->getFiles();
         $url = $this->request->getParam('URL');
+        $created = true;
         
         $storage = new binarypool_storage($bucket);
         
@@ -36,6 +39,7 @@ class api_command_create extends api_command_base {
             $symlink = binarypool_views::getDownloadedViewPath($bucket, $url);
             $asset = $storage->getAssetForLink($symlink);
             $this->log->info("Unmodified file %s", $asset);
+            $created = false;
         } else {
             // Save file
             $asset = $storage->save($type, $files);
@@ -52,7 +56,12 @@ class api_command_create extends api_command_base {
         
         $metadata = array();
         $metadata['URL'] = $url;
-        binarypool_views::created($bucket, $asset, $metadata);
+        if ($created) {
+            binarypool_views::created($bucket, $asset, $metadata);
+        } else {
+            $assetObj = $storage->getAssetObject($asset);
+            binarypool_views::updated($bucket, $asset, $assetObj, $metadata);
+        }
         
         $this->setResponseCode(201);
         $this->response->setHeader('Location', $asset);
@@ -123,7 +132,10 @@ class api_command_create extends api_command_base {
         $url = $this->request->getParam('URL');
         $this->log->debug("Downloading file: %s", $url);
         
-        $lastmodified = self::lastModified($this->bucket, $url);
+        if ( !self::$lastModified ) {
+            self::$lastModified = new binarypool_lastmodified(); 
+        }
+        $lastmodified = self::$lastModified->lastModified($this->bucket, $url);
         
         if ( binarypool_config::getCacheRevalidate($this->bucket) === 0 ) {
             $lastmodified['time'] = 0;
@@ -180,40 +192,6 @@ class api_command_create extends api_command_base {
             'file'     => $tmpfile,
             'filename' => $filename,
         ));
-    }
-    
-    /**
-     * Looks in the URL view for a symlink matching the provided
-     * URL and if found, returns the mtime of the link target
-     * 
-     * If the link points to /dev/null, we have a URL we were unable
-     * to download before - if that symlink itself is older than 1 hour
-     * we delete it and return 0. If the symlink is younger than hour,
-     * we raise an exception and abort. Intended as mechanism to prevent
-     * repeated attempts to download the same (non 200) URL in a short
-     * time period
-     *
-     * @param String $bucket
-     * @param String $url
-     * @return array(time => int Unix timestamp (0 means not found), revalidate => (true|false), cache_age => int) 
-     */
-    protected static function getURLLastModified($bucket, $url) {
-        $storage = new binarypool_storage($bucket);
-        $symlink = binarypool_views::getDownloadedViewPath($bucket, $url);
-        return $storage->getURLLastModified($url, $symlink);
-    }
-    
-    /**
-     * Wraps getURLLastModified in a static cache
-     *
-     * @see getURLLastModified
-     */
-    public static function lastModified($bucket, $url) {
-        static $modified = array();
-        if ( empty($modified[$bucket.$url]) ) {
-            $modified[$bucket.$url] = self::getURLLastModified($bucket, $url); 
-        }
-        return $modified[$bucket.$url];
     }
     
     /**

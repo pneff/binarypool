@@ -60,8 +60,12 @@ class binarypool_storage {
         return $this->storage->unlink($file);
     }
     
-    public function symlink($target, $link, $refresh = false) {
-        return $this->storage->symlink($target, $link, $refresh);
+    public function symlink($target, $link) {
+        return $this->storage->symlink($target, $link);
+    }
+    
+    public function relink($target, $link) {
+        return $this->storage->relink($target, $link);
     }
     
     public function getURLLastModified($url, $symlink) {
@@ -299,10 +303,12 @@ class binarypool_storage {
     private function getStorage($bucketConfig) {
         if (!is_null($bucketConfig) && isset($bucketConfig['storage'])) {
             $cls = 'binarypool_storage_driver_' . $bucketConfig['storage']['backend'];
-            return new $cls($bucketConfig['storage']);
+            $driver = new $cls($bucketConfig['storage']);
         } else {
-            return new binarypool_storage_driver_file();
+            $driver = new binarypool_storage_driver_file();
         }
+        $driver->bucketName = $this->bucketName;
+        return $driver; 
     }
     
     /**

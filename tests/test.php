@@ -15,7 +15,7 @@ if (getenv('TLD')) {
 }
 
 // Get command line arguments
-$options = array('suite' => 'all');
+$options = array();
 $argvRemain = array();
 foreach ($argv as $key=>$value) {
     if ($value[0] == '-') {
@@ -30,29 +30,57 @@ foreach ($argv as $key=>$value) {
     }
 }
 
-// Run tests
+if ( in_array('text', $argvRemain) ) {
+    $reporter = new TextReporter();
+} else {
+    $reporter = new JunitXMLReporter();
+}
+
+$files = array();
+foreach($argvRemain as $file) {
+    if ( !preg_match('#^(?:api|unit|functional)/.+\.php#', $file) ) { continue; }
+    if ( !file_exists($file) ) { continue; }
+    $files[] = $file;
+}
+
 $test = &new TestSuite("binarypool");
-if ($options['suite'] == 'all' || $options['suite'] == 'api') {
-    foreach (glob('api/*.php') as $file) {
-        $test->addTestFile($file);
+
+if ( count($files) ) {
+    
+    foreach ( $files as $file ) {
+        $test->addFile($file);        
     }
-}
-if ($options['suite'] == 'all' || $options['suite'] == 'unit') {
-    foreach (glob('unit/*.php') as $file) {
-        $test->addTestFile($file);
+    
+} else {
+    
+    if ( !count($options) ) {
+        $options['suite'] = 'all';
     }
-}
-if ($options['suite'] == 'all' || $options['suite'] == 'functional') {
-    foreach (glob('functional/*.php') as $file) {
-        $test->addTestFile($file);
+    
+    if ($options['suite'] == 'all' || $options['suite'] == 'api') {
+        foreach (glob('api/*.php') as $file) {
+            $test->addTestFile($file);
+        }
     }
+    
+    if ($options['suite'] == 'all' || $options['suite'] == 'unit') {
+        foreach (glob('unit/*.php') as $file) {
+            $test->addTestFile($file);
+        }
+    }
+    
+    if ($options['suite'] == 'all' || $options['suite'] == 'functional') {
+        foreach (glob('functional/*.php') as $file) {
+            $test->addTestFile($file);
+        }
+    }
+    
 }
 
 $_SERVER['BINARYPOOL_CONFIG'] = "test";
-$result = $test->run(new JunitXMLReporter());
+$result = $test->run($reporter);
 if ($result === true || $result === 0) {
     exit(0);
 } else {
     exit(1);
 }
-?>

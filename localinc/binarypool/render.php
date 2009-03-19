@@ -159,4 +159,3 @@ class binarypool_render {
         }
     }
 }
-?>

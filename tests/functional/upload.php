@@ -18,6 +18,11 @@ class test_func_upload extends test_base_functional {
         $this->assertEqual('test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml', $headers['Location']);
         $this->assertEqual('test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml', $headers['X-Asset']);
         $this->assertText('/saved/asset', 'test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
+        
+        $this->get('/test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml');
+        $this->assertPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
+        $this->get('/test/09/096dfa489bc3f21df56eded2143843f135ae967e/index.xml?NOXSL');
+        $this->assertNoPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
     }
     
     /**
@@ -153,7 +158,12 @@ class test_func_upload extends test_base_functional {
         $uri = $this->getText('/registry/items/item[@isRendition="false"]/location');
         
         // Download original file
-        $this->get('/' . $uri);
+        try {
+            $this->get('/' . $uri);            
+        } catch ( api_testing_exception $e ) {
+            // pass - we're not interested in the body of the response
+        }
+        
         $response = api_response::getInstance();
         $headers = $response->getHeaders();
         $this->assertEqual($response->getCode(), 200);

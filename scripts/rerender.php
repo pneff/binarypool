@@ -41,8 +41,9 @@ function walk_callback($dir) {
         $asset = $storage->getAssetObject($dir . 'index.xml');
         $processed++;
         try {
+            $file = new binarypool_fileobject($asset->getOriginal());
             $storage->save($asset->getType(),
-                array('_' => array('file' => $asset->getOriginal())),
+                array('_' => array('file' => $file->file)),
                 true);
         } catch (Exception $e) {
            echo "    ERROR: Could not convert " . $dir . "index.xml\n";

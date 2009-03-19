@@ -82,6 +82,8 @@ $PATHS = array(
     'symlinks' => 'symlinks',
     'xmllint'  => 'xmllint',
     'file'     => 'file',
+    'pdfconverter' => 'pdfconverter',
+    'epstopdf' => 'epstopdf',
 );
 
 /**

@@ -23,4 +23,19 @@ class test_func_get extends test_base_functional {
         $this->assertText('/error/code', '100');
         $this->assertText('/error/msg', 'Bucket not defined: something');
     }
+    
+    /**
+     * Search for the client side XSL processing instruction
+     */
+    function testClientXSL() {
+        $this->get('/');
+        $this->assertPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
+        $this->get('/test');
+        $this->assertPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
+        
+        $this->get('/?NOXSL');
+        $this->assertNoPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
+        $this->get('/test?NOXSL');
+        $this->assertNoPattern('#<\?xml-stylesheet#', $this->responseDom->saveXML());
+    }
 }

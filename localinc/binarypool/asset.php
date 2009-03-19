@@ -202,7 +202,7 @@ class binarypool_asset {
      */
     private function getItem($file, $rendition) {
         $fproxy = new binarypool_fileobject($file);
-        if (is_null($fproxy->file)) {
+        if ( !$fproxy->exists() ) {
             throw new binarypool_exception(102, 404, "Referenced file in asset does not exist: $file");
         }
 
@@ -255,14 +255,12 @@ class binarypool_asset {
      */
     private function load($file) {
         // Load document into RAM, do checks
-        $dom = DOMDocument::loadXML($this->storage->getFile($file));
-        if (is_null($dom)) {
+        $dom = new DOMDocument();
+        if ( !$dom->loadXML($this->storage->getFile($file)) ) {
             throw new binarypool_exception(113, 500, "Invalid asset file: $file");
         }
+        
         $xp = new DOMXPath($dom);
-        if (is_null($xp)) {
-            throw new binarypool_exception(113, 500, "Invalid asset file: $file");
-        }
         if ($this->getXPathValue($xp, '/registry/@version') != '3.0') {
             throw new binarypool_exception(113, 500, "Invalid asset file: $file");
         }
@@ -342,4 +340,3 @@ class binarypool_asset {
         return $res->item(0)->nodeValue;
     }
 }
-?>

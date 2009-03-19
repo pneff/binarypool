@@ -40,18 +40,21 @@ class BinarypoolRenderImageTest extends BinarypoolTestCase {
         $resizedFile = $targetPath . 'test_800_800';
         
         mkdir($targetPath, 0755, true);
-        copy($this->testfile, $targetPath . 'test.jpg');
+        copy($this->testfile, $sourceFile);
         
         $out = binarypool_render_image::render(
             $sourceFile, $resizedFile,
             null, array('width' => 800, 'height' => 800)
         );
-        $this->assertEqual($out, $resizedFile . '.jpg', 'Rendering did not determine the correct file extension for the thumbnail. - %s');
+        $this->assertEqual($out, $resizedFile . '.jpg',
+            'Rendering did not determine the correct file extension for the thumbnail. - %s');
         
         $this->assertTrue(file_exists($out), "Resized file was not created");
         list ($width, $height) = getimagesize($out);
         $this->assertEqual(557, $width);
         $this->assertEqual(344, $height);
+        $this->assertEqual(sha1_file($out), sha1_file($sourceFile),
+            'SHA1 hash of the two files differ. The original file should have been used instead of converted.');
     }
     
     /**

@@ -1,13 +1,31 @@
 <?php
 class binarypool_mime {
+    
+    /**
+     * "Memoized" map of file names to resolved mime type  
+     */
+    private static $seen = array();
+    
     /**
      * Returns the MIME type of the given file.
      *
      * @param $file: A file path or URL.
      */
     public static function getMimeType($file) {
+        if ( !array_key_exists($file, self::$seen) ) {
+            self::$seen[$file] = self::resolveMimeType($file);            
+        }
+        
+        return self::$seen[$file];
+    }
+    
+    /**
+     * Actually resolves the mime type - called from getMimeType
+     * if the file has not been seen before
+     */
+    private static function resolveMimeType($file) {
         $fproxy = new binarypool_fileobject($file);
-        if (is_null($fproxy->file)) {
+        if (!$fproxy->exists()) {
             return null;
         }
         
@@ -43,7 +61,7 @@ class binarypool_mime {
         $base = $info['filename'];
         $ext = isset($info['extension']) ? $info['extension'] : '';
         
-        $mime = self::getMimeType($file);
+        $mime = self::resolveMimeType($file);
         
         switch ($mime) {
             case 'image/bmp':
@@ -208,4 +226,3 @@ class binarypool_mime {
         return $info['mime'];
     }
 }
-?>

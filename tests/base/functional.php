@@ -51,4 +51,26 @@ class test_base_functional extends api_testing_case_functional {
             'URL' => 'http://staticlocal.ch/images/logo.gif',
         ));
     }
+    
+    /**
+     * Override OKAPI implementation with one that raises exceptions
+     * on empty XML
+     */
+    protected function loadResponse() {
+        $response = api_response::getInstance();
+        $resp = $response->getContents();
+        
+        if ( empty($resp) ) {
+            throw new api_testing_exception("Empty response document");
+        }
+        
+        $dom = new DOMDocument();
+        if ( !$dom->loadXML($resp) ) {
+            throw new api_testing_exception(
+                sprintf("Unable to load XML: '%s'", $resp)
+                );
+        }
+        
+        $this->responseDom = $dom;
+    }
 }

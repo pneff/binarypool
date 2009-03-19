@@ -9,6 +9,7 @@ class binarypool_fileobject {
     protected $remote = false;
     protected $origfile = null;
     protected static $REMOTE_PROTOCOLS = array('http://', 'https://');
+    private $exists = False;
     
     public function __construct($file, $http_client = null) {
         $this->file = $this->origfile = $file;
@@ -27,6 +28,9 @@ class binarypool_fileobject {
         if ($this->remote) {
             $this->file = $this->downloadFile($file);
         }
+        
+        $this->exists = file_exists($this->file);
+        
     }
     
     public function isRemote() {
@@ -43,11 +47,22 @@ class binarypool_fileobject {
         @rmdir(dirname($tmpfile));
     }
     
+    /**
+     * Whether the file which this fileobject represents exists on
+     * the local filesystem (as a temporary file)
+     */
+    public function exists() {
+        return $this->exists;
+    }
+    
     protected function downloadFile($url) {
         $tmpfile = $this->getTempfile($url);
         if (!file_exists($tmpfile)) {
             $result = $this->http_client->download($url, $tmpfile);
             if ($result['code'] !== 200) {
+                if ( file_exists($tmpfile) ) {
+                    unlink($tmpfile);
+                }
                 return null;
             }
         }

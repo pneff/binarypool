@@ -2,6 +2,8 @@
 require_once(dirname(__FILE__) . '/exception.php');
 require_once(dirname(__FILE__) . '/asset.php');
 require_once(dirname(__FILE__) . '/config.php');
+require_once(dirname(__FILE__) . '/lastmodified.php');
+require_once(dirname(__FILE__) . '/storagefactory.php');
 
 /**
  * Handles storing of files in different views.
@@ -14,6 +16,10 @@ require_once(dirname(__FILE__) . '/config.php');
  * Dates are stored as YYYY/MM/DD.
  */
 class binarypool_views {
+    
+    public static $lastModified = null;
+    public static $storageFactory = null;
+    
     /**
      * Hook function for the case when a binary is created.
      * Will create all the symbolic as needed for this
@@ -23,8 +29,9 @@ class binarypool_views {
      * @param $asset: Relative to a valid asset file.
      * @param $metadata: e.g. URL if binary fetched from a url  
      */
+
     public static function created($bucket, $asset, $metadata = array()) {
-        $storage = new binarypool_storage($bucket);
+        $storage = self::getStorage($bucket);
         $assetObj = $storage->getAssetObject($asset);
         
         self::linkCreationDate($bucket, $assetObj);
@@ -41,11 +48,12 @@ class binarypool_views {
      * @param $asset:       Relative path to a valid asset file.
      * @param $oldAssetObj: The version of the asset file before saving.
      */
-    public static function updated($bucket, $asset, $oldAssetObj) {
-        $storage = new binarypool_storage($bucket);
+    public static function updated($bucket, $asset, $oldAssetObj, $metadata = array()) {
+        $storage = self::getStorage($bucket);
         $assetObj = $storage->getAssetObject($asset);
         
         self::linkExpirationDate($bucket, $assetObj, $oldAssetObj);
+        self::linkURL($bucket, $assetObj, $metadata);
     }
     
     /**
@@ -80,7 +88,7 @@ class binarypool_views {
             $dateDir = date('Y/m/d', $oldasset->getExpiry());
             $fullDateDir = $bucket . '/expiry/' . $dateDir;
             $symlink = $fullDateDir . '/' . $asset->getHash();
-            $storage = new binarypool_storage($bucket);
+            $storage = self::getStorage($bucket);
             $storage->unlink($symlink);
         }
         
@@ -105,14 +113,16 @@ class binarypool_views {
         $assetDir = '../../' . self::getCleanedBasepath($asset);
         $symlink = self::getDownloadedViewPath($bucket, $metadata['URL']);
         
-        $lastmodified = api_command_create::lastModified($bucket, $metadata['URL']);
-        
-        $refresh = False;
-        if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate($bucket) ) {
-            $refresh = True;
+        if ( !self::$lastModified ) {
+            self::$lastModified = new binarypool_lastmodified();
         }
+        $lastmodified = self::$lastModified->lastModified($bucket, $metadata['URL']);
         
-        self::createLink($bucket, $assetDir, $symlink, $refresh);
+        if ( $lastmodified['cache_age'] > binarypool_config::getCacheRevalidate($bucket) ) {
+            self::refreshLink($bucket, $assetDir, $symlink);
+        } else {
+            self::createLink($bucket, $assetDir, $symlink);
+        }
     }
     
     /**
@@ -151,6 +161,13 @@ class binarypool_views {
                       );
     }
     
+    private static function getStorage($bucket) {
+        if ( !self::$storageFactory ) {
+            self::$storageFactory = new binarypool_storagefactory();
+        }
+        return self::$storageFactory->getStorage($bucket);
+    }
+    
     /**
      * Returns a basepath without bucket and trailing slash
      * for the given asset.
@@ -168,8 +185,17 @@ class binarypool_views {
      * Creates a symbolic link, also creating all parent directories
      * if necessary.
      */
-    private static function createLink($bucket, $target, $link, $refresh = false) {
-        $storage = new binarypool_storage($bucket);
-        $storage->symlink($target, $link, $refresh);
+    private static function createLink($bucket, $target, $link) {
+        $storage = self::getStorage($bucket);
+        $storage->symlink($target, $link);
+    }
+    
+    /**
+     * Refresh (touch) an existing symlink or create a new one
+     * if nothing already existing
+     */
+    private static function refreshLink($bucket, $target, $link) {
+        $storage = self::getStorage($bucket);
+        $storage->relink($target, $link);
     }
 }

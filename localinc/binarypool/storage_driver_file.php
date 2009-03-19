@@ -5,6 +5,7 @@ require_once(dirname(__FILE__) . '/storage_driver.php');
  * A storage implementation to save files to the local file system.
  */
 class binarypool_storage_driver_file extends binarypool_storage_driver {
+    
     public function __construct($root = null) {
         if (is_null($root)) {
             if (binarypool_config::getRoot() == '') {
@@ -32,7 +33,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
             mkdir($dir, 0755, true);
         }
         if (!file_exists($dir)) {
-            throw new binarypool_exception(104, 500, "Could not create directory to hold uploaded file: $absoluteDir");
+            throw new binarypool_exception(104, 500, "Could not create directory to hold uploaded file: $dir");
         }
         
         copy($local_file, $targetFile);
@@ -128,7 +129,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
         if (readlink($symlinkAbs) == '/dev/null') {
             $failed_time = $now - $stat['mtime'];
             if ($failed_time > binarypool_config::getBadUrlExpiry()) {
-                unlink($symlink);
+                unlink($symlinkAbs);
                 return array('time' => 0, 'revalidate' => true, 'cache_age' => $failed_time);
             }
             
@@ -172,7 +173,7 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
         unlink($this->absolutize($file));
     }
     
-    public function symlink($target, $link, $refresh = false) {
+    public function symlink($target, $link) {
         $this->clearstatcache();
         $link = $this->absolutize($link);
         
@@ -182,12 +183,38 @@ class binarypool_storage_driver_file extends binarypool_storage_driver {
         
         if (! file_exists($link)) {
             symlink($target, $link);
-        } else if ($refresh) {
-            // "touch" the symlink
-            $tmplink = sprintf("/tmp/%s%s", sha1($link), microtime(True));
-            symlink($target, $tmplink);
-            rename($tmplink, $link);
         }
+    }
+    
+    public function relink($target, $link) {
+        $this->clearstatcache();
+        $link = $this->absolutize($link);
+        
+        if (! file_exists($link)) {
+            $this->symlink($target, $link);
+            return;
+        }
+        
+        // "touch" the existing symlink...
+        // first create a symlink using a temporary name, linked to
+        // the target then rename the temporary link to the final
+        // link name, overwriting the existing link (i.e. atomic
+        // vs. deleting existing then create new, non-atomic)
+        $tmplink = sprintf("/tmp/%s%s", sha1($link), microtime(True));
+        
+        symlink($target, $tmplink);
+        
+        if ( !rename($tmplink, $link) ) {
+            $log = new api_log();
+            $log->err(
+            	"Unable to rename tmplink '%s' to '%s' for target '%s' in bucket '%s'",
+            	$tmplink, $link, $target, $this->bucketName);
+            
+            if ( file_exists($tmplink) ) {
+                unlink($tmplink);
+            }
+        }
+        
     }
     
     public function getAssetForLink($bucket, $symlink) {

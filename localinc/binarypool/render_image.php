@@ -12,13 +12,37 @@ class binarypool_render_image extends binarypool_render_base {
      * - height: Maximum height of the output image.
      */
     public static function render($source, $target, $assetFile, $config) {
-        $maxWidth = $config['width'];
-        $maxHeight = $config['height'];
-        
-        $mime = binarypool_mime::getMimeType($source);
+        $info = binarypool_fileinfo::getFileinfo($source);
+        $mime = $info['mime'];
         $target = self::getTargetFile($source, $mime, $target);
-        self::convert($source, $target, $mime, $maxWidth, $maxHeight);
+        
+        if (!self::needsConversion($mime, $config, $source)) {
+            $log = new api_log();
+            $log->debug("Using original file for $target");
+            copy($source, $target);
+        } else {
+            $maxWidth = $config['width'];
+            $maxHeight = $config['height'];
+            self::convert($source, $target, $mime, $maxWidth, $maxHeight);
+        }
         return $target;
+    }
+    
+    /**
+     * Returns true if we need to convert the file, false if we can
+     * use the original.
+     */
+    protected static function needsConversion($mime, $config, $orig) {
+        $goodMimes = array('image/jpeg', 'image/png', 'image/gif');
+        if (!in_array($mime, $goodMimes)) {
+            return true;
+        }
+        
+        list ($width, $height) = getimagesize($orig);
+        if ($width > $config['width'] || $height > $config['height']) {
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -104,4 +128,4 @@ class binarypool_render_image extends binarypool_render_base {
         return $target . '.' . $newExtension;
     }
 }
-?>
+

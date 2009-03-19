@@ -115,7 +115,7 @@ class BinarypoolStorageTest extends BinarypoolTestCase {
         $created = intval($this->getXPathValue($xp, '/registry/created'));
         $this->assertWithinMargin(time(), $created, 10);
         $expiry = intval($this->getXPathValue($xp, '/registry/expiry'));
-        $this->assertWithinMargin(strtotime('+7 days'), $expiry, 10);
+        $this->assertWithinMargin(strtotime('+7 days'), $expiry, 3610);
     }
     
     /**

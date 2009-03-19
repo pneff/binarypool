@@ -14,6 +14,11 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
     function setUp() {
         parent::setUp();
         $this->time = time();
+        binarypool_storage_driver_s3::resetMemoryCaches();
+    }
+    
+    function testDown() {
+        binarypool_storage_driver_s3::resetMemoryCaches();
     }
     
     function testAbsolutize() {
@@ -423,6 +428,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         $s3->expectAt(1, 'getObject', array('bin.staticlocal.ch', 'foo/bx/bxabcdef/index.xml'));
         $s3->setReturnValueAt(1, 'getObject', $this->prepareGetObjectResponse(
             file_get_contents(dirname(__FILE__).'/../res/example_asset.xml')));
+        $s3->expectOnce('getObjectInfo');
+        $s3->setReturnValue('getObjectInfo', true);
         
         $storage = new binarypool_storage_driver_s3($bucket['storage'], $s3,
             $this->getMockCache(), $this->time);
@@ -460,6 +467,7 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         $storage = new binarypool_storage_driver_s3($bucket['storage'], $s3,
             $this->getMockCache(), $this->time);
         
+        $s3->setReturnValue('getObjectInfo', false);
         $s3->expectOnce('putObject', array(
             json_encode(array('link' => '../../hashing/index.xml', 'mtime' => $this->time)),
             'bin.staticlocal.ch',
@@ -486,7 +494,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         
         $retval = $storage->getURLLastModified(
             'http://www.patrice.ch/',
-            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de');
+            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de',
+            'test_s3');
         $this->assertEqual($retval, array(
             'time' => 0, 'revalidate' => true, 'cache_age' => 0));
     }
@@ -511,7 +520,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         
         $retval = $storage->getURLLastModified(
             'http://www.patrice.ch/',
-            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de');
+            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de',
+            'test_s3');
         $this->assertEqual($retval, array(
             'time' => 0, 'revalidate' => true, 'cache_age' => 9120));
     }
@@ -539,7 +549,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         $this->expectException($exception);
         $storage->getURLLastModified(
             'http://www.patrice.ch/',
-            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de');
+            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de',
+            'test_s3');
     }
     
     function testGetUrlFetchedRefetch() {
@@ -561,7 +572,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         
         $retval = $storage->getURLLastModified(
             'http://www.patrice.ch/',
-            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de');
+            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de',
+        	'test_s3');
         $this->assertEqual($retval, array(
             'time' => $this->time - 9129381, 'revalidate' => true, 'cache_age' => 9129381));
     }
@@ -585,7 +597,8 @@ class BinarypoolStorageDriverS3Test extends BinarypoolTestCase {
         
         $retval = $storage->getURLLastModified(
             'http://www.patrice.ch/',
-            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de');
+            'test/downloaded/9f/9fae60fc483eef3a55cbad16b9f13c94eb81a5de',
+        	'test_s3');
         $this->assertEqual($retval, array(
             'time' => $this->time - 10, 'revalidate' => false, 'cache_age' => 10));
     }

@@ -6,6 +6,17 @@ require_once(dirname(__FILE__) . '/../../inc/S3/Wrapper.php');
  * A storage implementation to save files into Amazon S3.
  */
 class binarypool_storage_driver_s3 extends binarypool_storage_driver {
+    
+    /**
+     * Keep track of results for isFile() for the current request 
+     */
+    private static $isFileCache = array();
+    
+    /**
+     * Keep track of results for isDir() for the current request
+     */
+    private static $isDirCache = array();
+    
     public function __construct($cfg, $client = null, $cache = null, $time = null) {
         $this->cfg = $cfg;
         $this->cache = is_null($cache) ? api_cache::getInstance() : $cache;
@@ -29,6 +40,8 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         binarypool_fileinfo::setCache($url,
             binarypool_fileinfo::getFileinfo($local_file));
 
+        $this->removeCache($remote_file);
+        $this->flushCache($remote_file);
         $retval = $this->client->putObjectFile(
             $local_file,
             $this->cfg['bucket'],
@@ -37,7 +50,7 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
             array(),
             binarypool_mime::getMimeType($local_file)
         );
-        $this->flushCache($remote_file);
+        
         if ($retval === false) {
             throw new binarypool_exception(105, 500, "Could not copy file to its final destination on S3: $remote_file");
         }
@@ -72,13 +85,32 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
             $retval[$name] = $remote_file;
             
             // Remove the temporary file
-            unlink($file);
-            $tmpdir = dirname($file);
+            if ( file_exists($file) ) {
+                unlink($file);
+            } else {
+                $log = new api_log();
+                $log->warn(
+                	"storage_driver_s3::saveRenditions() - No temp file for rendition '%s' at '%s'",
+                    $name,
+                    $file
+                    );
+            }
+            
+            if ( empty($tmpdir) ) {
+                $tmpdir = dirname($file);
+            }
         }
         
         if ($tmpdir !== '') {
             // Optimistic removal. If it's not empty, this will fail.
             @rmdir($tmpdir);
+            if ( file_exists($tmpdir) ) {
+                $log = new api_log();
+                $log->warn(
+                	"storage_driver_s3::saveRenditions() - unable to remove rendition tmpdir '%s'",
+                    $tmpdir
+                    );
+            }
         }
         
         return $retval;
@@ -92,6 +124,11 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
             $target .= '/';
         }
         
+        $this->removeCache($source);
+        $this->removeCache($target);
+        $this->flushCache($source);
+        $this->flushCache($target);
+        
         $s3_bucket = $this->cfg['bucket'];
         $files = $this->client->getBucket($s3_bucket, $source);
         if (is_array($files)) {
@@ -102,8 +139,7 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
                 $this->client->deleteObject($s3_bucket, $file);
             }
         }
-        $this->flushCache($source);
-        $this->flushCache($target);
+        
         return true;
     }
     
@@ -116,62 +152,118 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
     }
     
     public function isFile($file) {
+        if ( !array_key_exists($file, self::$isFileCache) ) {
+            self::$isFileCache[$file] = $this->resolveIsFile($file);
+        }
+        return self::$isFileCache[$file];
+    }
+    
+    private function resolveIsFile($file) {
         $ckey = 'isfile_' . $this->getCacheKey($file);
-        if ($retval = $this->cache->get($ckey)) {
-            return $retval;
+        
+        $retval = (int)$this->cache->get($ckey);
+        if ( $retval > 0 ) {
+            return True;
+        }
+        
+        // Allow for 10 failed attempts before we cache the
+        // "not found" to prevent "hammering" S3 with requests
+        // for something that isn't there
+        if ( $retval < -10 ) {
+            return False;
         }
 
         $file = ltrim($file, '/');
-        $info = $this->client->getObjectInfo(
-            $this->cfg['bucket'], $file, false);
-        $retval = ($info !== false);
-        $this->cache->set($ckey, $retval);
-        return $retval;
+        try {
+            $info = $this->client->getObjectInfo(
+                $this->cfg['bucket'], $file, false);
+        } catch (S3Exception $e) {
+            if ($e->getCode() == 403) {
+                // Requested with query string => not a file
+                return False;
+            }
+        }
+        
+        if ( $info === true ) {
+            $this->cache->set($ckey, 1);
+            return True;
+        }
+        
+        // decrement the fail count
+        $this->cache->set($ckey, --$retval);
+        return False;
+        
     }
     
     public function isDir($file) {
+        if ( !array_key_exists($file, self::$isDirCache) ) {
+            self::$isDirCache[$file] = $this->resolveIsDir($file);
+        }
+        return self::$isDirCache[$file];
+    }
+    
+    private function resolveIsDir($file) {
         $ckey = 'isdir_' . $this->getCacheKey($file);
-        if ($retval = $this->cache->get($ckey)) {
-            return $retval;
+        
+        $retval = (int)$this->cache->get($ckey);
+        if ( $retval > 0 ) {
+            return True;
+        }
+
+        // see resolveIsFile for explanation
+        if ( $retval < -10 ) {
+            return False;
         }
 
         $dir = trim($file, '/') . '/';
         $s3_bucket = $this->cfg['bucket'];
         $files = $this->client->getBucket($s3_bucket, $dir);
+        
         if (is_array($files) && count($files) > 0) {
-            $this->cache->set($ckey, true);
-            return true;
-        } else {
-            $this->cache->set($ckey, false);
-            return false;
+            $this->cache->set($ckey, 1);
+            return True;
         }
+
+        $this->cache->set($ckey, --$retval);
+        return False;
+
     }
     
     public function getFile($file) {
+        $ckey = 'getfile_' . $this->getCacheKey($file);
+        if ($retval = $this->cache->get($ckey)) {
+            return $retval;
+        }
+
         $file = ltrim($file, '/');
         $response = $this->client->getObject(
             $this->cfg['bucket'], $file);
-        
         if ($response->code !== 200) {
             return null;
         } else {
             $body = $response->body;
             if ($body instanceof SimpleXMLElement) {
-                return $body->asXML();
-            } else {
-                return $body;
+                $body = $body->asXML();
             }
+            $this->cache->set($ckey, $body);
+            return $body;
         }
+    }
+    
+    protected function removeCache($file) {
+        $ckey = 'getfile_' . $this->getCacheKey($file);
+        $this->cache->del($ckey);
     }
     
     public function sendFile($file) {
         $url = $this->absolutize($file);
         $fproxy = new binarypool_fileobject($url);
-        if (!is_null($fproxy->file)) {
-            readfile($fproxy->file);
-        } else {
+        
+        if ( !$fproxy->exists() ) {
             throw new binarypool_exception(115, 404, "File not found: " . $file);
         }
+        
+        readfile($fproxy->file);
     }
     
     public function isAbsoluteStorage() {
@@ -200,33 +292,25 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
     public function unlink($file) {
         $s3_bucket = $this->cfg['bucket'];
         $retval = $this->client->deleteObject($s3_bucket, $file);
+        $this->removeCache($file);
         $this->flushCache($file);
         return $retval;
     }
     
-    public function symlink($target, $link, $refresh = false) {
-        // Remove the HTTP cache
-        $url = $this->absolutize($link);
-        binarypool_fileobject::forgetCache($url);
-
-        if (strrpos($link, '.link') !== strlen($link)-5) {
-            $link .= '.link';
+    public function symlink($target, $link) {
+        $link = $this->correctSymlinkName($link);
+        
+        if ($this->isFile($link)) {
+            return;
         }
         
-        $json = json_encode(array(
-            'link' => $target,
-            'mtime' => $this->time,
-        ));
+        $this->writeSymlink($target, $link);
         
-        $s3_bucket = $this->cfg['bucket'];
-        return $this->client->putObject(
-            $json,
-            $s3_bucket,
-            $link,
-            S3::ACL_PUBLIC_READ,
-            array(),
-            'application/x-symlink'
-        );
+    }
+    
+    public function relink($target, $link) {
+        $link = $this->correctSymlinkName($link);
+        $this->writeSymlink($target, $link);
     }
     
     public function getURLLastModified($url, $symlink, $bucket) {
@@ -268,6 +352,15 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         return str_replace('//', '/', $this->resolveSymlink($symlink) . '/index.xml');
     }
     
+    /**
+     * Flush the in-memory caches for this request - $isFileCache
+     * and $isDirCache
+     */
+    public static function resetMemoryCaches() {
+        self::$isFileCache = array();
+        self::$isDirCache = array();
+    }
+    
     protected function resolveSymlink($path) {
         $contents = $this->getFile($path);
         if ($contents === null) {
@@ -286,7 +379,7 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
     }
     
     protected function getCacheKey($file) {
-        return 'binp_' . preg_replace('/[^a-zA-Z0-9]+/', '_', trim($file, '/'));
+        return 'binp_' . $this->cfg['bucket'] . sha1($file);
     }
     
     protected function flushCache($file) {
@@ -295,5 +388,38 @@ class binarypool_storage_driver_s3 extends binarypool_storage_driver {
         $this->cache->del($this->getCacheKey($file));
         $this->cache->del('isfile_' . $this->getCacheKey($file));
         $this->cache->del('isdir_' . $this->getCacheKey($file));
+        $this->resetMemoryCaches();
     }
+    
+    protected function correctSymlinkName($link) {
+        if (strrpos($link, '.link') !== strlen($link)-5) {
+            return $link . '.link';
+        }
+        return $link;
+    }
+    
+    protected function writeSymlink($target, $link) {
+        // Remove the HTTP cache
+        $url = $this->absolutize($link);
+        binarypool_fileobject::forgetCache($url);
+        
+        $json = json_encode(array(
+            'link' => $target,
+            'mtime' => $this->time,
+        ));
+        
+        $s3_bucket = $this->cfg['bucket'];
+        $this->removeCache($link);
+        $this->flushCache($link);
+        return $this->client->putObject(
+            $json,
+            $s3_bucket,
+            $link,
+            S3::ACL_PUBLIC_READ,
+            array(),
+            'application/x-symlink'
+        );
+        
+    }
+    
 }

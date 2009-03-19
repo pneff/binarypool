@@ -7,14 +7,29 @@ class api_command_serve extends api_command_base {
     protected function execute() {
         $storage = new binarypool_storage($this->bucket);
         $path = $this->getPath();
-        $mime = binarypool_mime::getMimeType($storage->absolutize($path));
-        $this->response->setHeader('Content-Type', $mime);
         
-        // Turn off output buffering, so big files don't cause problems
-        $this->response->setContentLengthOutput(false);
-        $this->response->send();
-        $storage->sendFile($path);
+        if ( preg_match('#index\.xml$#', $path) && $this->clientxsl ) {
+            
+            ob_start();
+            $storage->sendFile($path);
+            $content = ob_get_contents();
+            ob_end_clean();
+            
+            $pi = '<?xml version="1.0" encoding="UTF-8"?>';
+            $pi .= '<?xml-stylesheet type="text/xsl" href="/static/xsl/index.xsl"?>';
+
+            $content = preg_replace('#<\?xml version="1.0" encoding="UTF-8"\?>#', $pi, $content);
+            $this->sendHeaders('text/xml; charset=utf-8');
+            print $content;
+            
+        } else {
+            $mime = binarypool_mime::getMimeType($storage->absolutize($path));
+            $this->sendHeaders($mime);
+            $storage->sendFile($path);
+        }
+        
         $this->ignoreView = true;
+        
     }
     
     /**
@@ -40,5 +55,17 @@ class api_command_serve extends api_command_base {
     
     protected function getUri() {
         return $this->request->getPath();
+    }
+    
+    /**
+     * Injects the processing instruction to include the client
+     * side XSL in the output
+     */
+    protected function sendHeaders($mime) {
+        $this->response->setHeader('Content-Type', $mime);
+        // Turns off output buffering,
+        // so big files are streamed
+        $this->response->setContentLengthOutput(false);
+        $this->response->send();
     }
 }

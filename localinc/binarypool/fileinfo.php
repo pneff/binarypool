@@ -11,14 +11,21 @@ class binarypool_fileinfo {
      * @param $file: A file path or URL.
      */
     public static function getFileinfo($file) {
+        
         if (isset(self::$fileinfoCache[$file])) {
             return self::$fileinfoCache[$file];
         }
         
+        $mime = null;
+        $size = null;
+        $sha1 = null;
+        
         $fproxy = new binarypool_fileobject($file);
-        $mime = binarypool_mime::getMimeType($fproxy->file);
-        $size = intval(filesize($fproxy->file));
-        $sha1 = sha1_file($fproxy->file);
+        if ( $fproxy->exists() ) {
+            $mime = binarypool_mime::getMimeType($fproxy->file);
+            $size = intval(filesize($fproxy->file));
+            $sha1 = sha1_file($fproxy->file);
+        }
         
         $info = array('mime' => $mime, 'size' => $size, 'hash' => $sha1);
         self::$fileinfoCache[$file] = $info;

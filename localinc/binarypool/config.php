@@ -114,4 +114,3 @@ class binarypool_config {
         self::$useragent = $USERAGENT;
     }
 }
-?>

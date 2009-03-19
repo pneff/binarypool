@@ -19,4 +19,4 @@ class binarypool_exception extends Exception {
         return $this->httpcode;
     }
 }
-?>
+
