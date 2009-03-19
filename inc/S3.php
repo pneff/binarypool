@@ -26,6 +26,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
+class S3Exception extends Exception {
+    function __construct($code, $msg) {
+        $this->code = $code;
+        $this->message = $msg;
+    }
+}
+
 /**
 * Amazon S3 PHP class
 *
@@ -80,8 +87,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::listBuckets(): [%s] %s", $rest->error['code'], $rest->error['message']), E_USER_WARNING);
-			return false;
+			throw new S3Exception($rest->error['code'], "Could not list buckets: " . $rest->error['message']);
 		}
 		$results = array(); //var_dump($rest->body);
 		if (!isset($rest->body->Buckets)) return $results;
@@ -123,8 +129,7 @@ class S3 {
 		if ($response->error === false && $response->code !== 200)
 			$response->error = array('code' => $response->code, 'message' => 'Unexpected HTTP status');
 		if ($response->error !== false) {
-			trigger_error(sprintf("S3::getBucket(): [%s] %s", $response->error['code'], $response->error['message']), E_USER_WARNING);
-			return false;
+			throw new S3Exception($response->error['code'], "Could not get bucket $bucket: " . $response->error['message']);
 		}
 
 		$results = array();
@@ -197,8 +202,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::putBucket({$bucket}, {$acl}, {$location}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "$bucket, $acl, $location: $rest->error['message']");
 			return false;
 		}
 		return true;
@@ -217,8 +221,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 204)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::deleteBucket({$bucket}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not delete bucket $bucket: $rest->error['message']");
 			return false;
 		}
 		return true;
@@ -234,8 +237,7 @@ class S3 {
 	*/
 	public static function inputFile($file, $md5sum = true) {
 		if (!file_exists($file) || !is_file($file) || !is_readable($file)) {
-			trigger_error('S3::inputFile(): Unable to open input file: '.$file, E_USER_WARNING);
-			return false;
+			throw new S3Exception(100, "Unable to pen input file: $file");
 		}
 		return array('file' => $file, 'size' => filesize($file),
 		'md5sum' => $md5sum !== false ? (is_string($md5sum) ? $md5sum :
@@ -253,7 +255,7 @@ class S3 {
 	*/
 	public static function inputResource(&$resource, $bufferSize, $md5sum = '') {
 		if (!is_resource($resource) || $bufferSize <= 0) {
-			trigger_error('S3::inputResource(): Invalid resource or buffer size', E_USER_WARNING);
+			throw new S3Exception(0, "S3::inputResource(): Invalid resource or buffer size");
 			return false;
 		}
 		$input = array('size' => $bufferSize, 'md5sum' => $md5sum);
@@ -322,7 +324,7 @@ class S3 {
 		if ($rest->response->error === false && $rest->response->code !== 200)
 			$rest->response->error = array('code' => $rest->response->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->response->error !== false) {
-			trigger_error(sprintf("S3::putObject(): [%s] %s", $rest->response->error['code'], $rest->response->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->response->error['code'], "Could not put Object to bucket $bucket: " . $rest->response->error['message']);
 			return false;
 		}
 		return true;
@@ -383,8 +385,7 @@ class S3 {
 		if ($rest->response->error === false && $rest->response->code !== 200)
 			$rest->response->error = array('code' => $rest->response->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->response->error !== false) {
-			trigger_error(sprintf("S3::getObject({$bucket}, {$uri}): [%s] %s",
-			$rest->response->error['code'], $rest->response->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->response->error['code'], "Could not get object $bucket / $uri: " . $rest->response->error['message']);
 			return false;
 		}
 		$rest->file = realpath($saveTo);
@@ -406,8 +407,7 @@ class S3 {
 		if ($rest->error === false && ($rest->code !== 200 && $rest->code !== 404))
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::getObjectInfo({$bucket}, {$uri}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not get object info $bucket / $uri: " . $rest->error['message']);
 			return false;
 		}
 		return $rest->code == 200 ? $returnInfo ? $rest->headers : true : false;
@@ -430,8 +430,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::copyObject({$srcBucket}, {$srcUri}, {$bucket}, {$uri}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not copy object from $srcBucket/$srcUri to $bucket/$uri: " . $rest->error['message']);
 			return false;
 		}
 		return isset($rest->body->LastModified, $rest->body->ETag) ? array(
@@ -473,8 +472,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::setBucketLogging({$bucket}, {$uri}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not set bucket logging $bucket/$uri: " . $rest->error['message']);
 			return false;
 		}
 		return true;
@@ -497,8 +495,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::getBucketLogging({$bucket}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not get bucket logging for $bucket: " . $rest->error['message']);
 			return false;
 		}
 		if (!isset($rest->body->LoggingEnabled)) return false; // No logging
@@ -522,7 +519,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::getBucketLocation({$bucket}): [%s] %s", $rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not get bucket location for $bucket: " . $rest->error['message']);
 			return false;
 		}
 		return (isset($rest->body[0]) && (string)$rest->body[0] !== '') ? (string)$rest->body[0] : 'US';
@@ -580,8 +577,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::setAccessControlPolicy({$bucket}, {$uri}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not set access control policy $bucket/$uri: " . $rest->error['message']);
 			return false;
 		}
 		return true;
@@ -604,8 +600,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 200)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::getAccessControlPolicy({$bucket}, {$uri}): [%s] %s",
-			$rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not get access control policy $bucket/$uri: " . $rest->error['message']);
 			return false;
 		}
 
@@ -659,7 +654,7 @@ class S3 {
 		if ($rest->error === false && $rest->code !== 204)
 			$rest->error = array('code' => $rest->code, 'message' => 'Unexpected HTTP status');
 		if ($rest->error !== false) {
-			trigger_error(sprintf("S3::deleteObject(): [%s] %s", $rest->error['code'], $rest->error['message']), E_USER_WARNING);
+			throw new S3Exception($rest->error['code'], "Could not delete object $bucket/$uri: " . $rest->error['message']);
 			return false;
 		}
 		return true;
@@ -838,6 +833,7 @@ final class S3Request {
 		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 20);
 
 		// Headers
 		$headers = array(); $amz = array();
