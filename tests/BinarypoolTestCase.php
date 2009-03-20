@@ -71,7 +71,9 @@ abstract class BinarypoolTestCase extends UnitTestCase {
                     $this->deltree($path.DIRECTORY_SEPARATOR.$entry);
                 }
             }
-            rmdir($path);
+            if ( !rmdir($path) ) {
+                trigger_error("Error purging test dir $path", E_USER_WARNING);
+            }
         } else {
             unlink($path);
         }

@@ -9,7 +9,7 @@ class binarypool_fileobject {
     protected $remote = false;
     protected $origfile = null;
     protected static $REMOTE_PROTOCOLS = array('http://', 'https://');
-    private $exists = False;
+    private $exists = NULL;
     
     public function __construct($file, $http_client = null) {
         $this->file = $this->origfile = $file;
@@ -28,8 +28,6 @@ class binarypool_fileobject {
         if ($this->remote) {
             $this->file = $this->downloadFile($file);
         }
-        
-        $this->exists = file_exists($this->file);
         
     }
     
@@ -52,7 +50,31 @@ class binarypool_fileobject {
      * the local filesystem (as a temporary file)
      */
     public function exists() {
+        
+        if ( !is_null($this->exists) ) {
+            return $this->exists;
+        }
+        
+        if ( !file_exists($this->file) ) {
+            $this->exists = False;
+            return $this->exists;
+        }
+        
+        // local files don't need the same care...
+        if ( !$this->remote ) {
+            $this->exists = True;
+            return $this->exists;
+        }
+        
+        $content = file_get_contents($this->file);
+        if ( strlen(trim()) == 0 ) {
+            $this->exists = False;
+            return $this->exists;
+        }
+        
+        $this->exists = True;
         return $this->exists;
+        
     }
     
     protected function downloadFile($url) {

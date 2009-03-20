@@ -38,9 +38,9 @@ class BinarypoolFileobjectTest extends BinarypoolTestCase {
             'code' => 200,
             'body' => false,
         ));
-        
+        file_put_contents($this->tmpfile,
+            '<?xml version="1.0" encoding="utf-8"?><root/>');
         $fproxy = new binarypool_fileobject($this->url, $http_mock);
-        file_put_contents($this->tmpfile, 'some body');
         $this->assertNotNull($fproxy->file);
         $this->assertNotEqual($this->url, $fproxy->file);
         $this->assertEqual($this->tmpfile, $fproxy->file);
@@ -56,10 +56,24 @@ class BinarypoolFileobjectTest extends BinarypoolTestCase {
         ));
         
         $fproxy = new binarypool_fileobject($this->url, $http_mock);
-        file_put_contents($this->tmpfile, 'some body');
+        $this->assertTrue(file_put_contents($this->tmpfile,
+            '<?xml version="1.0" encoding="utf-8"?><root/>'));
         $this->assertEqual($this->tmpfile, $fproxy->file);
         $this->assertEqual(sha1_file($fproxy->file),
-            '754e8afdb33e180fbb7311eba784c5416766aa1c');
+            '47e3bfd49965bf2ed1d8ac5f26054aca9a7260a0');
+    }
+    
+    function testRemotefileEmpty() {
+        $http_mock = $this->getHttpMock();
+        $http_mock->expectOnce('download', array($this->url, $this->tmpfile));
+        $http_mock->setReturnValue('download', array(
+            'code' => 200,
+            'body' => false,
+        ));
+        
+        file_put_contents($this->tmpfile, '');
+        $fproxy = new binarypool_fileobject($this->url, $http_mock);
+        $this->assertFalse($fproxy->exists());
     }
     
     function testForgetCache() {
@@ -73,14 +87,15 @@ class BinarypoolFileobjectTest extends BinarypoolTestCase {
     
     function testCachedRemote() {
         mkdir(dirname($this->tmpfile), 0755, true);
-        file_put_contents($this->tmpfile, "some other body");
+        file_put_contents($this->tmpfile,
+            '<?xml version="1.0" encoding="utf-8"?><newroot/>');
         
         $http_mock = $this->getHttpMock();
         $http_mock->expectNever('get');
         $http_mock->expectNever('download');
         $fproxy = new binarypool_fileobject($this->url, $http_mock);
         $this->assertEqual(sha1_file($fproxy->file),
-            'eaaedb186627810613f2a9d454cfd47ea1dbee55');
+            '4a7030b18ce13fb012984476c2b67f15223426f8');
     }
     
     function testRemotefile404() {
