@@ -13,4 +13,7 @@ scripts/binarypool_preflight.py
 package/
 conf/binarypool-pneff.php
 scripts/queued_preflight.php
-
+.project
+.settings
+.cache
+.buildpath
