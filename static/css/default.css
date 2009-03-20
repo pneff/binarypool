@@ -1,0 +1,101 @@
+@CHARSET "UTF-8";
+/* Start general styles */
+body {
+	font-family:Arial;
+	font-size:12px;
+	margin:0;
+	padding:3em;
+}
+#header {
+	background-color:#333;
+    margin:3em;
+    margin-top: 0;
+    padding:0.1em;
+    padding-left: 1em;
+    width: 64em;
+}
+#header h1 {
+	color: #eee;
+}
+#header a {
+    color: #eee;
+    text-decoration: none;
+}
+#header a:hover {
+    color: yellow;
+}
+#content {
+    margin:3em;
+}
+#content ol.buckets li:before {
+	content: "\00BB \0020";
+}
+#content ol.buckets li {
+	font-size: 130%;
+	font-weight: bold;
+	list-style: none;
+}
+#content ol a {
+    color: #aaa;
+    text-decoration: none;
+}
+#content ol a:hover {
+    background-color: yellow;
+}
+/* Start upload forms */
+form {
+	margin: 0;
+}
+fieldset {  
+	clear: left;  
+	margin: 0 0 1.5em 0.3em;  
+	padding: 0;
+	width: 64em; 
+}
+legend {  
+	margin-left: 1em;  
+	color: #000000;  
+	font-weight: bold;
+}
+fieldset ol {  
+	padding: 1em 1em 0 1em;  
+	list-style: none;
+}
+fieldset li {  
+    padding-bottom: 1em;
+}
+label {  
+	float: left;  
+	width: 5em;  
+	margin-left: 1em;
+	padding-top: 0.2em;
+	font-size: 130%;
+	font-weight: bold; 
+}
+input[type="text"] {
+    width: 20em;
+}
+input[type="submit"] {
+	margin-left: 1em;
+}
+/* End upload forms */
+
+/* Start index */
+div.rendition {
+	margin: 2em;
+	background-color: #FF6347;
+	padding: 0.5em;
+}
+ul.info {
+	list-style: none;
+}
+ul.info li {
+    font-size: 90% !important;	
+    font-family: courier;
+    padding-bottom: 0.1em;
+}
+ul.info li strong {
+    float: left;  
+    width: 8em;  
+}
+/* End index */
