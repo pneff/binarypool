@@ -68,6 +68,7 @@ class binarypool_fileobject {
         
         $content = file_get_contents($this->file);
         if ( strlen(trim($content)) == 0 ) {
+            unlink($this->file);
             $this->exists = False;
             return $this->exists;
         }
