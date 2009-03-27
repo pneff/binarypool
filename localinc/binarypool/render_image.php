@@ -69,7 +69,8 @@ class binarypool_render_image extends binarypool_render_base {
            case 'application/pdf':
                $cmd .= ' -trim';
                break;
-
+           case 'image/gif';
+               break;
            default:
                $cmd .= ' -flatten';
                break;
