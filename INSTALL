@@ -18,6 +18,11 @@ The following Unix tools are required:
         - Debian: # apt-get install symlinks
         - Centos: # yum install symlinks
         - Others: Download and compile: http://mirror.switch.ch/ftp/mirror/FreeBSD/ports/distfiles/symlinks-1.2.tar.gz
+        Note you'll need to make the following change to symlinks.c on OSX;
+        < #include <malloc.h>
+        ---
+        > #include <stdlib.h>
+        > #include <malloc/malloc.h>
 
 
 1. Get code
