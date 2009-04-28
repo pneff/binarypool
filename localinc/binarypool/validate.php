@@ -1,5 +1,6 @@
 <?php
 require_once(dirname(__FILE__).'/validate_xml.php');
+require_once(dirname(__FILE__).'/validate_image.php');
 
 class binarypool_validate {
     /**
